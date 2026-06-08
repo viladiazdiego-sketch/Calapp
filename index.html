@@ -44,7 +44,7 @@
         --transition-fast: 0.2s cubic-bezier(0.25, 1, 0.5, 1);
         --transition: 0.35s cubic-bezier(0.25, 1, 0.5, 1);
         --transition-slow: 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-        --nav-height: 85px;
+        --nav-height: 70px;
         --header-height: 65px;
         --safe-bottom: env(safe-area-inset-bottom, 20px);
         --max-width: 480px;
@@ -144,7 +144,7 @@
         transform: translateY(15px) scale(0.98);
         pointer-events: none;
         transition: opacity var(--transition), transform var(--transition);
-        padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 30px);
+        padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 40px);
         -webkit-overflow-scrolling: touch;
         scroll-behavior: smooth;
     }
@@ -183,7 +183,7 @@
         padding: 20px 24px;
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 24px;
         min-height: 100%;
     }
     
@@ -201,27 +201,31 @@
         display: flex;
         justify-content: space-around;
         align-items: center;
-        padding: 10px 10px calc(10px + var(--safe-bottom));
-        height: var(--nav-height);
+        padding: 6px 6px;
+        padding-bottom: max(6px, var(--safe-bottom));
+        min-height: var(--nav-height);
+        gap: 2px;
         transition: background-color var(--transition-slow);
     }
     .nav-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 6px;
-        font-size: 0.65rem;
+        gap: 3px;
+        font-size: 0.6rem;
         font-weight: 700;
         color: var(--text-muted);
         cursor: pointer;
-        padding: 8px 16px;
-        border-radius: 20px;
+        padding: 6px 10px;
+        border-radius: 16px;
         transition: all var(--transition-fast);
         border: none;
         background: transparent;
         position: relative;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
+        min-width: 0;
+        flex: 1;
     }
     .nav-item.active {
         color: #fff;
@@ -229,7 +233,7 @@
         box-shadow: 0 6px 20px var(--accent-glow);
     }
     .nav-item .nav-icon {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         transition: transform var(--transition-fast);
     }
     .nav-item.active .nav-icon {
@@ -397,6 +401,7 @@
         background: var(--bg-card);
         transition: all var(--transition);
         box-shadow: var(--shadow-card);
+        margin-bottom: 24px;
     }
     .meal-block-header {
         display: flex;
@@ -1009,7 +1014,14 @@
 
     function closeModal() {
         document.getElementById('modalOverlay').classList.remove('active');
-        document.getElementById('modalSheet').innerHTML = '';
+    }
+    function openModal(html) {
+        const sheet = document.getElementById('modalSheet');
+        // Solo reconstruir si el contenido es diferente
+        if (sheet.innerHTML !== html) {
+            sheet.innerHTML = html;
+        }
+        document.getElementById('modalOverlay').classList.add('active');
     }
     function openModal(html) {
         document.getElementById('modalSheet').innerHTML = html;
@@ -1052,6 +1064,7 @@
             saveData();
             document.getElementById('screen-onboarding').classList.remove('active');
             document.getElementById('screen-onboarding').style.display = 'none';
+            document.getElementById('bottomNav').style.display = 'flex';
             showScreen('dashboard');
         }
     });
@@ -1188,57 +1201,94 @@
 
     // ============ MEALS SCREEN ============
     function renderMealsScreen() {
+        const container = document.getElementById('mealsContainer');
+        if (!container) return;
+        
         const today = getToday();
         const log = getLog(today);
         document.getElementById('mealsHeaderDate').textContent = formatDateLong(today);
-        const mealNames = [
-            { key: 'breakfast', emoji: '🌅', name: 'Desayuno' },
-            { key: 'lunch', emoji: '☀️', name: 'Almuerzo' },
-            { key: 'dinner', emoji: '🌆', name: 'Cena' },
-            { key: 'snacks', emoji: '🍪', name: 'Snacks' }
-        ];
-        let html = '';
-        for (const meal of mealNames) {
-            const items = log.meals[meal.key] || [];
+
+        const needsFullRebuild = !container.querySelector('.meals-structure');
+        
+        if (needsFullRebuild) {
+            const mealNames = [
+                { key: 'breakfast', emoji: '🌅', name: 'Desayuno' },
+                { key: 'lunch', emoji: '☀️', name: 'Almuerzo' },
+                { key: 'dinner', emoji: '🌆', name: 'Cena' },
+                { key: 'snacks', emoji: '🍪', name: 'Snacks' }
+            ];
+            let html = '<div class="meals-structure">';
+            for (const meal of mealNames) {
+                html += '<div class="meal-block open" data-meal-key="' + meal.key + '">';
+                html += '<div class="meal-block-header"><span class="meal-name">' + meal.emoji + ' ' + meal.name + '</span><span class="meal-kcal" id="mealKcal-' + meal.key + '">0 kcal</span></div>';
+                html += '<div class="meal-block-body"><div class="meal-items" id="mealItems-' + meal.key + '"></div></div>';
+                html += '<button class="btn-add-meal" data-meal="' + meal.key + '">+ Añadir alimento</button>';
+                html += '</div>';
+            }
+            html += '</div>';
+            container.innerHTML = html;
+            
+            // Event listeners fijos (solo se añaden una vez)
+            container.querySelectorAll('.meal-block-header').forEach(function(header) {
+                header.addEventListener('click', function() {
+                    this.parentElement.classList.toggle('open');
+                });
+            });
+            container.querySelectorAll('.btn-add-meal').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    window._addingToMeal = this.dataset.meal;
+                    showScreen('food-selector');
+                });
+            });
+        }
+        
+        // Actualizar SOLO los datos (sin tocar la estructura)
+        updateMealsData(log);
+    }
+    
+    function updateMealsData(log) {
+        const mealKeys = ['breakfast', 'lunch', 'dinner', 'snacks'];
+        
+        for (const mealKey of mealKeys) {
+            const items = log.meals[mealKey] || [];
             const mealKcal = calcMealKcal(items);
-            html += '<div class="meal-block open"><div class="meal-block-header"><span class="meal-name">' + meal.emoji + ' ' + meal.name + '</span><span class="meal-kcal">' + mealKcal + ' kcal</span></div><div class="meal-block-body">';
+            
+            // Actualizar calorías
+            const kcalEl = document.getElementById('mealKcal-' + mealKey);
+            if (kcalEl) kcalEl.textContent = mealKcal + ' kcal';
+            
+            // Actualizar items
+            const itemsContainer = document.getElementById('mealItems-' + mealKey);
+            if (!itemsContainer) continue;
+            
             if (items.length === 0) {
-                html += '<div class="empty-state" style="padding:20px;"><p style="font-size:0.85rem;">Vacío</p></div>';
+                itemsContainer.innerHTML = '<div class="empty-state" style="padding:20px;"><p style="font-size:0.85rem;">Vacío</p></div>';
             } else {
+                let itemsHtml = '';
                 for (let i = 0; i < items.length; i++) {
                     const item = items[i];
                     const food = appData.foods.find(function(f) { return f.id === item.foodId; });
                     const foodName = food ? food.name : 'Alimento eliminado';
-                    html += '<div class="meal-item"><span class="item-info"><span class="item-name">' + foodName + '</span><div class="item-detail">' + item.grams + (food ? food.unit : 'g') + '</div></span><span class="item-kcal">' + Math.round(item.kcal) + ' kcal</span><button class="btn-remove" data-meal="' + meal.key + '" data-index="' + i + '">✕</button></div>';
+                    itemsHtml += '<div class="meal-item"><span class="item-info"><span class="item-name">' + foodName + '</span><div class="item-detail">' + item.grams + (food ? food.unit : 'g') + '</div></span><span class="item-kcal">' + Math.round(item.kcal) + ' kcal</span><button class="btn-remove" data-meal="' + mealKey + '" data-index="' + i + '">✕</button></div>';
                 }
+                itemsContainer.innerHTML = itemsHtml;
+                
+                // Event listeners para botones de eliminar (se recrean porque el HTML cambia)
+                itemsContainer.querySelectorAll('.btn-remove').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const mealKey = this.dataset.meal;
+                        const index = parseInt(this.dataset.index);
+                        const today = getToday();
+                        const log = getLog(today);
+                        log.meals[mealKey].splice(index, 1);
+                        saveData();
+                        updateMealsData(log);
+                        renderDashboard();
+                    });
+                });
             }
-            html += '</div><button class="btn-add-meal" data-meal="' + meal.key + '">+ Añadir alimento</button></div>';
         }
-        document.getElementById('mealsContainer').innerHTML = html;
-        document.querySelectorAll('#mealsContainer .meal-block-header').forEach(function(header) {
-            header.addEventListener('click', function() {
-                this.parentElement.classList.toggle('open');
-            });
-        });
-        document.querySelectorAll('#mealsContainer .btn-remove').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const mealKey = this.dataset.meal;
-                const index = parseInt(this.dataset.index);
-                const today = getToday();
-                const log = getLog(today);
-                log.meals[mealKey].splice(index, 1);
-                saveData();
-                renderMealsScreen();
-                renderDashboard();
-            });
-        });
-        document.querySelectorAll('#mealsContainer .btn-add-meal').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                window._addingToMeal = this.dataset.meal;
-                showScreen('food-selector');
-            });
-        });
     }
 
     // ============ FOOD SELECTOR ============
@@ -1265,8 +1315,8 @@
         document.getElementById('btnCreateFoodFromSelector').addEventListener('click', function() { openCreateFoodModal(); });
     }
 
-    function openConsumeFoodModal(food) {
-        let html = '<div class="modal-handle"></div><div class="modal-title">¿Cuánto vas a consumir?</div><p style="text-align:center;color:var(--text-secondary);font-size:0.95rem; font-weight:600;">' + food.name + ' · ' + food.refCalories + ' kcal por ' + food.refAmount + food.unit + '</p><div class="stepper"><button id="stepperDown">−</button><div style="text-align:center;"><span class="stepper-value" id="stepperValue">' + food.refAmount + '</span><span class="stepper-unit">' + food.unit + '</span></div><button id="stepperUp">+</button></div><div class="result-display"><div class="result-kcal" id="resultKcal">' + food.refCalories + ' kcal</div><div class="result-macros" id="resultMacros">' + (food.protein ? 'P:'+food.protein+'g' : '') + ' ' + (food.carbs ? 'C:'+food.carbs+'g' : '') + ' ' + (food.fat ? 'G:'+food.fat+'g' : '') + '</div></div><button class="btn btn-primary" id="btnConfirmConsume">Añadir al día ✓</button><button class="btn btn-secondary" id="btnCancelConsume" style="margin-top:12px;">Cancelar</button>';
+        function openConsumeFoodModal(food) {
+        let html = '<div class="modal-handle"></div><div class="modal-title">¿Cuánto vas a consumir?</div><p style="text-align:center;color:var(--text-secondary);font-size:0.95rem; font-weight:600;">' + food.name + ' · ' + food.refCalories + ' kcal por ' + food.refAmount + food.unit + '</p><div class="stepper"><button id="stepperDown">−</button><div style="text-align:center;"><span class="stepper-value" id="stepperValue" style="cursor:text;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:6px;">' + food.refAmount + '</span><span class="stepper-unit">' + food.unit + '</span></div><button id="stepperUp">+</button></div><div class="result-display"><div class="result-kcal" id="resultKcal">' + food.refCalories + ' kcal</div><div class="result-macros" id="resultMacros">' + (food.protein ? 'P:'+food.protein+'g' : '') + ' ' + (food.carbs ? 'C:'+food.carbs+'g' : '') + ' ' + (food.fat ? 'G:'+food.fat+'g' : '') + '</div></div><button class="btn btn-primary" id="btnConfirmConsume">Añadir al día ✓</button><button class="btn btn-secondary" id="btnCancelConsume" style="margin-top:12px;">Cancelar</button>';
         openModal(html);
 
         let currentGrams = food.refAmount;
@@ -1283,15 +1333,60 @@
             document.getElementById('resultMacros').textContent = macros.join(' · ') || '';
         }
 
+        const stepperValue = document.getElementById('stepperValue');
+        
+        function makeEditable(spanElement) {
+            spanElement.addEventListener('click', function handler(e) {
+                e.stopPropagation();
+                const currentVal = currentGrams;
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = currentVal;
+                input.min = step;
+                input.max = 2000;
+                input.step = food.unit === 'ud' ? '0.5' : '1';
+                input.style.cssText = 'font-size:2.8rem;font-weight:900;width:130px;text-align:center;background:transparent;border:none;color:var(--text-primary);outline:none;letter-spacing:-2px;padding:0;margin:0;font-family:var(--font);';
+                input.inputMode = food.unit === 'ud' ? 'decimal' : 'numeric';
+                
+                spanElement.replaceWith(input);
+                input.focus();
+                input.select();
+                
+                input.addEventListener('blur', function() {
+                    let newVal = parseFloat(this.value);
+                    if (isNaN(newVal) || newVal < step) newVal = step;
+                    if (newVal > 2000) newVal = 2000;
+                    if (food.unit === 'ud') newVal = Math.round(newVal * 2) / 2;
+                    currentGrams = newVal;
+                    const span = document.createElement('span');
+                    span.className = 'stepper-value';
+                    span.id = 'stepperValue';
+                    span.style.cssText = 'cursor:text;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:6px;';
+                    span.textContent = currentGrams;
+                    this.replaceWith(span);
+                    updateStepper();
+                    makeEditable(span);
+                });
+                
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') this.blur();
+                });
+            });
+        }
+        
+        makeEditable(stepperValue);
+        
         document.getElementById('stepperDown').addEventListener('click', function() {
             currentGrams = Math.max(step, currentGrams - step);
             if (food.unit === 'ud') currentGrams = Math.round(currentGrams * 2) / 2;
+            document.getElementById('stepperValue').textContent = currentGrams;
             updateStepper();
         });
         document.getElementById('stepperUp').addEventListener('click', function() {
             currentGrams += step;
             if (food.unit === 'ud') currentGrams = Math.round(currentGrams * 2) / 2;
             if (currentGrams > 2000) currentGrams = 2000;
+            document.getElementById('stepperValue').textContent = currentGrams;
             updateStepper();
         });
         document.getElementById('btnConfirmConsume').addEventListener('click', function() {
@@ -1316,7 +1411,7 @@
         document.getElementById('btnCancelConsume').addEventListener('click', closeModal);
     }
 
-    function openCreateFoodModal(savedCallback) {
+        function openCreateFoodModal(savedCallback) {
         let html = '<div class="modal-handle"></div><div class="modal-title">Nuevo alimento</div><div class="input-group"><label>Nombre</label><input type="text" id="newFoodName" placeholder="Ej: Pan integral"></div><div class="input-group"><label>Unidad</label><select id="newFoodUnit"><option value="g">Gramos (g)</option><option value="ml">Mililitros (ml)</option><option value="ud">Unidad (ud)</option><option value="taza">Taza (250ml)</option><option value="cucharada">Cucharada (15ml)</option><option value="cucharadita">Cucharadita (5ml)</option><option value="porcion">Porción</option><option value="loncha">Loncha/Rodaja</option></select></div><div class="input-group"><label>Cantidad de referencia</label><input type="number" id="newFoodRefAmount" placeholder="Ej: 100" value="100" min="1" inputmode="numeric"></div><div class="input-group"><label>Calorías (para esa cantidad)</label><input type="number" id="newFoodCalories" placeholder="Ej: 250" min="0" inputmode="numeric"></div><div class="input-group"><label>Proteínas (g) - opcional</label><input type="number" id="newFoodProtein" placeholder="Ej: 9" min="0" step="0.1" inputmode="decimal"></div><div class="input-group"><label>Carbohidratos (g) - opcional</label><input type="number" id="newFoodCarbs" placeholder="Ej: 45" min="0" step="0.1" inputmode="decimal"></div><div class="input-group"><label>Grasas (g) - opcional</label><input type="number" id="newFoodFat" placeholder="Ej: 3" min="0" step="0.1" inputmode="decimal"></div><button class="btn btn-primary" id="btnSaveNewFood">Guardar alimento ✓</button><button class="btn btn-secondary" id="btnCancelNewFood" style="margin-top:12px;">Cancelar</button>';
         openModal(html);
 
@@ -1352,38 +1447,73 @@
 
     // ============ EXERCISE SCREEN ============
     function renderExerciseScreen() {
+        const container = document.getElementById('exerciseContainer');
+        if (!container) return;
+        
         const today = getToday();
         const log = getLog(today);
         document.getElementById('exerciseHeaderDate').textContent = formatDateLong(today);
-        const burned = calcDayBurned(today);
 
-        let html = '<div class="glass-card" style="text-align:center; margin-bottom:20px;"><div style="font-size:3.5rem;margin-bottom:8px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));">🔥</div><div style="font-size:2.8rem;font-weight:900; letter-spacing:-1px;">' + burned + '</div><div style="font-size:0.9rem;color:var(--text-secondary); font-weight:700; text-transform:uppercase; letter-spacing:1px;">kcal quemadas hoy</div></div>';
-
+        const needsFullRebuild = !container.querySelector('.exercise-structure');
+        
+        if (needsFullRebuild) {
+            container.innerHTML = `
+                <div class="exercise-structure">
+                    <div class="glass-card" style="text-align:center; margin-bottom:20px;">
+                        <div style="font-size:3.5rem;margin-bottom:8px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));">🔥</div>
+                        <div style="font-size:2.8rem;font-weight:900; letter-spacing:-1px;" id="exerciseBurned">0</div>
+                        <div style="font-size:0.9rem;color:var(--text-secondary); font-weight:700; text-transform:uppercase; letter-spacing:1px;">kcal quemadas hoy</div>
+                    </div>
+                    <div id="exerciseListContainer"></div>
+                    <button class="btn btn-secondary" id="btnAddExercise" style="margin-top:8px;">+ Añadir ejercicio</button>
+                </div>
+            `;
+            
+            document.getElementById('btnAddExercise').addEventListener('click', function() { 
+                showScreen('exercise-selector'); 
+            });
+        }
+        
+        // Actualizar SOLO los datos
+        updateExerciseData(log);
+    }
+    
+    function updateExerciseData(log) {
+        const burned = calcDayBurned(getToday());
+        
+        // Actualizar kcal quemadas
+        const burnedEl = document.getElementById('exerciseBurned');
+        if (burnedEl) burnedEl.textContent = burned;
+        
+        // Actualizar lista de ejercicios
+        const listContainer = document.getElementById('exerciseListContainer');
+        if (!listContainer) return;
+        
         if (log.exercises.length === 0) {
-            html += '<div class="empty-state"><div class="empty-icon">🏃</div><p>No registraste ejercicio hoy.</p></div>';
+            listContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">🏃</div><p>No registraste ejercicio hoy.</p></div>';
         } else {
+            let html = '';
             for (let i = 0; i < log.exercises.length; i++) {
                 const exLog = log.exercises[i];
                 const exDef = appData.exercises.find(function(e) { return e.id === exLog.exerciseId; });
                 const exName = exDef ? exDef.name : 'Ejercicio eliminado';
                 html += '<div class="card" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:12px;"><div><strong style="font-size:1.05rem;">' + exName + '</strong><div style="font-size:0.8rem;color:var(--text-muted); font-weight:600; margin-top:4px;">' + exLog.minutes + ' min</div></div><div style="display:flex;align-items:center;gap:14px;"><span style="font-weight:800;color:var(--accent-2); font-size:1.1rem;">' + Math.round(exLog.kcal) + ' kcal</span><button class="btn-remove" data-ex-index="' + i + '">✕</button></div></div>';
             }
-        }
-        html += '<button class="btn btn-secondary" id="btnAddExercise" style="margin-top:8px;">+ Añadir ejercicio</button>';
-        document.getElementById('exerciseContainer').innerHTML = html;
-
-        document.querySelectorAll('#exerciseContainer .btn-remove').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const idx = parseInt(this.dataset.exIndex);
-                const today = getToday();
-                const log = getLog(today);
-                log.exercises.splice(idx, 1);
-                saveData();
-                renderExerciseScreen();
-                renderDashboard();
+            listContainer.innerHTML = html;
+            
+            // Event listeners para botones de eliminar
+            listContainer.querySelectorAll('.btn-remove').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(this.dataset.exIndex);
+                    const today = getToday();
+                    const log = getLog(today);
+                    log.exercises.splice(idx, 1);
+                    saveData();
+                    updateExerciseData(log);
+                    renderDashboard();
+                });
             });
-        });
-        document.getElementById('btnAddExercise').addEventListener('click', function() { showScreen('exercise-selector'); });
+        }
     }
 
     // ============ EXERCISE SELECTOR ============
@@ -1410,8 +1540,8 @@
         document.getElementById('btnCreateExerciseFromSelector').addEventListener('click', function() { openCreateExerciseModal(); });
     }
 
-    function openConsumeExerciseModal(exercise) {
-        let html = '<div class="modal-handle"></div><div class="modal-title">¿Cuántos minutos?</div><p style="text-align:center;color:var(--text-secondary);font-size:0.95rem; font-weight:600;">' + exercise.name + ' · ' + exercise.kcalPerMin + ' kcal/min</p><div class="stepper"><button id="stepperDownEx">−</button><div style="text-align:center;"><span class="stepper-value" id="stepperValueEx">30</span><span class="stepper-unit">min</span></div><button id="stepperUpEx">+</button></div><div class="result-display"><div class="result-kcal" id="resultKcalEx">' + (exercise.kcalPerMin * 30) + ' kcal</div></div><button class="btn btn-primary" id="btnConfirmEx">Añadir al día ✓</button><button class="btn btn-secondary" id="btnCancelEx" style="margin-top:12px;">Cancelar</button>';
+        function openConsumeExerciseModal(exercise) {
+        let html = '<div class="modal-handle"></div><div class="modal-title">¿Cuántos minutos?</div><p style="text-align:center;color:var(--text-secondary);font-size:0.95rem; font-weight:600;">' + exercise.name + ' · ' + exercise.kcalPerMin + ' kcal/min</p><div class="stepper"><button id="stepperDownEx">−</button><div style="text-align:center;"><span class="stepper-value" id="stepperValueEx" style="cursor:text;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:6px;">30</span><span class="stepper-unit">min</span></div><button id="stepperUpEx">+</button></div><div class="result-display"><div class="result-kcal" id="resultKcalEx">' + (exercise.kcalPerMin * 30) + ' kcal</div></div><button class="btn btn-primary" id="btnConfirmEx">Añadir al día ✓</button><button class="btn btn-secondary" id="btnCancelEx" style="margin-top:12px;">Cancelar</button>';
         openModal(html);
 
         let currentMin = 30;
@@ -1422,8 +1552,50 @@
             document.getElementById('resultKcalEx').textContent = Math.round(exercise.kcalPerMin * currentMin) + ' kcal';
         }
 
-        document.getElementById('stepperDownEx').addEventListener('click', function() { currentMin = Math.max(step, currentMin - step); updateStepperEx(); });
-        document.getElementById('stepperUpEx').addEventListener('click', function() { currentMin = Math.min(480, currentMin + step); updateStepperEx(); });
+        const stepperValueEx = document.getElementById('stepperValueEx');
+        
+        function makeEditableEx(spanElement) {
+            spanElement.addEventListener('click', function handler(e) {
+                e.stopPropagation();
+                const currentVal = currentMin;
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = currentVal;
+                input.min = step;
+                input.max = 480;
+                input.step = '5';
+                input.style.cssText = 'font-size:2.8rem;font-weight:900;width:130px;text-align:center;background:transparent;border:none;color:var(--text-primary);outline:none;letter-spacing:-2px;padding:0;margin:0;font-family:var(--font);';
+                input.inputMode = 'numeric';
+                
+                spanElement.replaceWith(input);
+                input.focus();
+                input.select();
+                
+                input.addEventListener('blur', function() {
+                    let newVal = parseInt(this.value);
+                    if (isNaN(newVal) || newVal < step) newVal = step;
+                    if (newVal > 480) newVal = 480;
+                    currentMin = newVal;
+                    const span = document.createElement('span');
+                    span.className = 'stepper-value';
+                    span.id = 'stepperValueEx';
+                    span.style.cssText = 'cursor:text;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:6px;';
+                    span.textContent = currentMin;
+                    this.replaceWith(span);
+                    updateStepperEx();
+                    makeEditableEx(span);
+                });
+                
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') this.blur();
+                });
+            });
+        }
+        
+        makeEditableEx(stepperValueEx);
+        
+        document.getElementById('stepperDownEx').addEventListener('click', function() { currentMin = Math.max(step, currentMin - step); document.getElementById('stepperValueEx').textContent = currentMin; updateStepperEx(); });
+        document.getElementById('stepperUpEx').addEventListener('click', function() { currentMin = Math.min(480, currentMin + step); document.getElementById('stepperValueEx').textContent = currentMin; updateStepperEx(); });
         document.getElementById('btnConfirmEx').addEventListener('click', function() {
             const today = getToday();
             const log = getLog(today);
@@ -1454,82 +1626,73 @@
     }
 
     // ============ SETTINGS ============
-    function renderSettingsScreen() {
-        let html = '';
-        html += '<div style="margin-bottom: 24px;">';
-        html += '<strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">👤 Perfil</strong>';
-        html += '<div class="card" id="editAge" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Edad</span><span style="color:var(--text-secondary); font-weight:600;">' + appData.age + ' años <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>';
-        html += '<div class="card" id="editWeight" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Peso</span><span style="color:var(--text-secondary); font-weight:600;">' + appData.weight + ' kg <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>';
-        html += '<div class="card" id="editHeight" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Altura</span><span style="color:var(--text-secondary); font-weight:600;">' + appData.height + ' cm <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>';
-        html += '<div class="card" id="editSex" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Sexo</span><span style="color:var(--text-secondary); font-weight:600;">' + (appData.sex === 'M' ? 'Masculino' : 'Femenino') + ' <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>';
-        html += '<div class="card" id="editActivity" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:16px; padding:18px 24px;"><span>Actividad</span><span style="color:var(--text-secondary); font-weight:600;">' + (['Sedentario','Ligero','Moderado','Intenso','Muy intenso'][['1.2','1.375','1.55','1.725','1.9'].indexOf(String(appData.activityLevel))] || 'Moderado') + ' <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>';
-        html += '<div class="glass-card" style="text-align:center;"><div style="font-size:0.8rem;color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:1px;">Objetivo calórico diario</div><div style="font-size:2.8rem;font-weight:900; letter-spacing:-1px; margin: 8px 0;">' + appData.goalCalories + '</div><div style="font-size:0.8rem;color:var(--text-muted); font-weight:600;">KCAL / DÍA</div></div>';
-        html += '</div>';
+   function renderSettingsScreen() {
+    const container = document.getElementById('settingsContainer');
+    if (!container) return;
 
-        html += '<div style="margin-bottom: 24px;">';
-        html += '<strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">📏 Peso corporal</strong>';
-        html += '<div class="card" id="registrarPeso" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Registrar peso actual</span><span style="color:var(--text-secondary); font-weight:600;">' + appData.weight + ' kg <span style="color:var(--accent); font-weight:800; margin-left:8px;">+</span></span></div>';
-        html += '<div class="card" id="verPeso" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Ver evolución</span><span style="color:var(--accent); font-weight:800;">></span></div>';
-        if (appData.weightLog && appData.weightLog.length > 0) {
-            var minPeso = appData.weightLog.reduce(function(a, b) { return a.weight < b.weight ? a : b; });
-            var maxPeso = appData.weightLog.reduce(function(a, b) { return a.weight > b.weight ? a : b; });
-            html += '<div class="card" style="text-align:center;font-size:0.85rem;color:var(--text-muted); padding:16px; margin-bottom:8px; font-weight:600;">Mín: <span style="color:var(--text-primary);">' + minPeso.weight + ' kg</span> &nbsp;|&nbsp; Máx: <span style="color:var(--text-primary);">' + maxPeso.weight + ' kg</span> &nbsp;|&nbsp; Registros: <span style="color:var(--text-primary);">' + appData.weightLog.length + '</span></div>';
-            if (appData.weightLog.length >= 3) {
-                var sorted = appData.weightLog.slice().sort(function(a, b) { return a.date.localeCompare(b.date); });
-                var first = sorted[0];
-                var last = sorted[sorted.length - 1];
-                var daysDiff = Math.max(1, Math.round((new Date(last.date + 'T00:00:00') - new Date(first.date + 'T00:00:00')) / 86400000));
-                var kgPerDay = (last.weight - first.weight) / daysDiff;
-                var kg30 = Math.round((last.weight + kgPerDay * 30) * 10) / 10;
-                var tendencia = kgPerDay < -0.01 ? 'bajando' : kgPerDay > 0.01 ? 'subiendo' : 'estable';
-                var emoji = tendencia === 'bajando' ? '📉' : tendencia === 'subiendo' ? '📈' : '📊';
-                html += '<div class="card" style="text-align:center;font-size:0.9rem;color:var(--text-secondary); padding:16px; line-height:1.5;">' + emoji + ' Tendencia: <strong style="color:var(--text-primary); text-transform:capitalize;">' + tendencia + '</strong><br>Si sigues así, en 30 días pesarás <strong style="color:var(--accent);">' + kg30 + ' kg</strong></div>';
-            }
-        }
-        html += '</div>';
+    const needsFullRebuild = !container.querySelector('.settings-profile-section');
+    
+    if (needsFullRebuild) {
+        container.innerHTML = `
+            <div class="settings-profile-section" style="margin-bottom: 24px;">
+                <strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">👤 Perfil</strong>
+                <div class="card" id="editAge" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Edad</span><span style="color:var(--text-secondary); font-weight:600;" id="valAge">${appData.age} años <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>
+                <div class="card" id="editWeight" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Peso</span><span style="color:var(--text-secondary); font-weight:600;" id="valWeight">${appData.weight} kg <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>
+                <div class="card" id="editHeight" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Altura</span><span style="color:var(--text-secondary); font-weight:600;" id="valHeight">${appData.height} cm <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>
+                <div class="card" id="editSex" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Sexo</span><span style="color:var(--text-secondary); font-weight:600;" id="valSex">${appData.sex === 'M' ? 'Masculino' : 'Femenino'} <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>
+                <div class="card" id="editActivity" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:16px; padding:18px 24px;"><span>Actividad</span><span style="color:var(--text-secondary); font-weight:600;" id="valActivity">${['Sedentario','Ligero','Moderado','Intenso','Muy intenso'][['1.2','1.375','1.55','1.725','1.9'].indexOf(String(appData.activityLevel))] || 'Moderado'} <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>
+                <div class="glass-card" style="text-align:center;"><div style="font-size:0.8rem;color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:1px;">Objetivo calórico diario</div><div style="font-size:2.8rem;font-weight:900; letter-spacing:-1px; margin: 8px 0;" id="valGoal">${appData.goalCalories}</div><div style="font-size:0.8rem;color:var(--text-muted); font-weight:600;">KCAL / DÍA</div></div>
+            </div>
 
-        html += '<div style="margin-bottom: 24px;">';
-        html += '<strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">🍎 Alimentos</strong>';
-        html += '<div class="card" id="manageFoods" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Gestionar alimentos</span><span style="color:var(--text-secondary); font-weight:600;">' + appData.foods.length + ' creados <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>';
-        html += '<button class="btn btn-secondary" id="btnCreateFoodFromSettings">➕ Crear alimento</button>';
-        html += '</div>';
+            <div class="settings-weight-section" style="margin-bottom: 24px;">
+                <strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">📏 Peso corporal</strong>
+                <div class="card" id="registrarPeso" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Registrar peso actual</span><span style="color:var(--text-secondary); font-weight:600;" id="valRegistrarPeso">${appData.weight} kg <span style="color:var(--accent); font-weight:800; margin-left:8px;">+</span></span></div>
+                <div class="card" id="verPeso" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Ver evolución</span><span style="color:var(--accent); font-weight:800;">></span></div>
+                <div id="weightStatsContainer"></div>
+            </div>
 
-        html += '<div style="margin-bottom: 24px;">';
-        html += '<strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">🏃 Ejercicios</strong>';
-        html += '<div class="card" id="manageExercises" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Gestionar ejercicios</span><span style="color:var(--text-secondary); font-weight:600;">' + appData.exercises.length + ' creados <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>';
-        html += '<button class="btn btn-secondary" id="btnCreateExerciseFromSettings">➕ Crear ejercicio</button>';
-        html += '</div>';
+            <div class="settings-foods-section" style="margin-bottom: 24px;">
+                <strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">🍎 Alimentos</strong>
+                <div class="card" id="manageFoods" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Gestionar alimentos</span><span style="color:var(--text-secondary); font-weight:600;" id="valFoodsCount">${appData.foods.length} creados <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>
+                <button class="btn btn-secondary" id="btnCreateFoodFromSettings">➕ Crear alimento</button>
+            </div>
 
-        html += '<div style="margin-bottom: 24px;">';
-        html += '<strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">📤 Datos</strong>';
-        html += '<div class="card" id="exportarDatos" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span style="font-weight:600;">📤 Exportar datos (JSON)</span><span style="color:var(--accent); font-weight:800;">></span></div>';
-        html += '<div class="card" id="importarDatos" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span style="font-weight:600;">📥 Importar datos (JSON)</span><span style="color:var(--accent); font-weight:800;">></span></div>';
-        html += '<input type="file" id="inputFile" accept=".json" style="display:none;">';
-        html += '</div>';
+            <div class="settings-exercises-section" style="margin-bottom: 24px;">
+                <strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">🏃 Ejercicios</strong>
+                <div class="card" id="manageExercises" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span>Gestionar ejercicios</span><span style="color:var(--text-secondary); font-weight:600;" id="valExercisesCount">${appData.exercises.length} creados <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span></span></div>
+                <button class="btn btn-secondary" id="btnCreateExerciseFromSettings">➕ Crear ejercicio</button>
+            </div>
 
-        document.getElementById('settingsContainer').innerHTML = html;
+            <div class="settings-data-section" style="margin-bottom: 24px;">
+                <strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">📤 Datos</strong>
+                <div class="card" id="exportarDatos" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span style="font-weight:600;">📤 Exportar datos (JSON)</span><span style="color:var(--accent); font-weight:800;">></span></div>
+                <div class="card" id="importarDatos" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span style="font-weight:600;">📥 Importar datos (JSON)</span><span style="color:var(--accent); font-weight:800;">></span></div>
+                <input type="file" id="inputFile" accept=".json" style="display:none;">
+            </div>
+        `;
 
-        document.getElementById('editAge').addEventListener('click', function() { openEditNumber('Edad', 'años', appData.age, 10, 120, function(v) { appData.age = v; recalcGoal(); saveData(); renderSettingsScreen(); renderDashboard(); }); });
-        document.getElementById('editWeight').addEventListener('click', function() { openEditNumber('Peso', 'kg', appData.weight, 30, 300, function(v) { appData.weight = v; recalcGoal(); saveData(); renderSettingsScreen(); renderDashboard(); }, 0.1); });
-        document.getElementById('editHeight').addEventListener('click', function() { openEditNumber('Altura', 'cm', appData.height, 100, 250, function(v) { appData.height = v; recalcGoal(); saveData(); renderSettingsScreen(); renderDashboard(); }); });
-        document.getElementById('editSex').addEventListener('click', function() {
+        // Event listeners (solo se añaden la primera vez)
+        document.getElementById('editAge').addEventListener('click', () => { openEditNumber('Edad', 'años', appData.age, 10, 120, (v) => { appData.age = v; recalcGoal(); saveData(); updateSettingsValues(); renderDashboard(); }); });
+        document.getElementById('editWeight').addEventListener('click', () => { openEditNumber('Peso', 'kg', appData.weight, 30, 300, (v) => { appData.weight = v; recalcGoal(); saveData(); updateSettingsValues(); renderDashboard(); }, 0.1); });
+        document.getElementById('editHeight').addEventListener('click', () => { openEditNumber('Altura', 'cm', appData.height, 100, 250, (v) => { appData.height = v; recalcGoal(); saveData(); updateSettingsValues(); renderDashboard(); }); });
+        document.getElementById('editSex').addEventListener('click', () => {
             openModal('<div class="modal-handle"></div><div class="modal-title">Sexo</div><button class="btn btn-primary" id="sexM" style="margin-bottom:12px;">Masculino</button><button class="btn btn-secondary" id="sexF">Femenino</button>');
-            document.getElementById('sexM').addEventListener('click', function() { appData.sex = 'M'; recalcGoal(); saveData(); closeModal(); renderSettingsScreen(); renderDashboard(); });
-            document.getElementById('sexF').addEventListener('click', function() { appData.sex = 'F'; recalcGoal(); saveData(); closeModal(); renderSettingsScreen(); renderDashboard(); });
+            document.getElementById('sexM').addEventListener('click', () => { appData.sex = 'M'; recalcGoal(); saveData(); closeModal(); updateSettingsValues(); renderDashboard(); });
+            document.getElementById('sexF').addEventListener('click', () => { appData.sex = 'F'; recalcGoal(); saveData(); closeModal(); updateSettingsValues(); renderDashboard(); });
         });
-        document.getElementById('editActivity').addEventListener('click', function() {
+        document.getElementById('editActivity').addEventListener('click', () => {
             const levels = [{ v: 1.2, n: 'Sedentario' }, { v: 1.375, n: 'Ligero' }, { v: 1.55, n: 'Moderado' }, { v: 1.725, n: 'Intenso' }, { v: 1.9, n: 'Muy intenso' }];
             let h = '<div class="modal-handle"></div><div class="modal-title">Nivel de actividad</div>';
-            levels.forEach(function(l) { h += '<button class="btn ' + (appData.activityLevel===l.v?'btn-primary':'btn-secondary') + '" data-activity="' + l.v + '" style="margin-bottom:12px;">' + l.n + '</button>'; });
+            levels.forEach(l => { h += '<button class="btn ' + (appData.activityLevel===l.v?'btn-primary':'btn-secondary') + '" data-activity="' + l.v + '" style="margin-bottom:12px;">' + l.n + '</button>'; });
             openModal(h);
-            document.querySelectorAll('#modalSheet button[data-activity]').forEach(function(b) {
-                b.addEventListener('click', function() { appData.activityLevel = parseFloat(this.dataset.activity); recalcGoal(); saveData(); closeModal(); renderSettingsScreen(); renderDashboard(); });
+            document.querySelectorAll('#modalSheet button[data-activity]').forEach(b => {
+                b.addEventListener('click', function() { appData.activityLevel = parseFloat(this.dataset.activity); recalcGoal(); saveData(); closeModal(); updateSettingsValues(); renderDashboard(); });
             });
         });
-        document.getElementById('manageFoods').addEventListener('click', function() { openManageFoodsModal(); });
-        document.getElementById('registrarPeso').addEventListener('click', function() {
+        document.getElementById('manageFoods').addEventListener('click', () => { openManageFoodsModal(); });
+        document.getElementById('registrarPeso').addEventListener('click', () => {
             openModal('<div class="modal-handle"></div><div class="modal-title">Registrar peso</div><div class="input-group"><label>Peso actual (kg)</label><input type="number" id="nuevoPeso" value="' + appData.weight + '" step="0.1" min="30" max="300" inputmode="decimal"></div><button class="btn btn-primary" id="guardarPeso">Guardar peso ✓</button><button class="btn btn-secondary" id="cancelPeso" style="margin-top:12px;">Cancelar</button>');
-            document.getElementById('guardarPeso').addEventListener('click', function() {
+            document.getElementById('guardarPeso').addEventListener('click', () => {
                 var nuevo = parseFloat(document.getElementById('nuevoPeso').value);
                 if (!nuevo || nuevo < 30 || nuevo > 300) { alert('Peso no válido.'); return; }
                 if (!appData.weightLog) appData.weightLog = [];
@@ -1538,89 +1701,149 @@
                 recalcGoal();
                 saveData();
                 closeModal();
-                renderSettingsScreen();
+                updateSettingsValues();
                 renderDashboard();
             });
             document.getElementById('cancelPeso').addEventListener('click', closeModal);
         });
-        document.getElementById('verPeso').addEventListener('click', function() {
-            if (!appData.weightLog || appData.weightLog.length === 0) {
-                alert('No hay datos de peso todavía.');
-                return;
-            }
-            var logs = appData.weightLog.slice(-30);
-            var minW = logs.reduce(function(a, b) { return a.weight < b.weight ? a : b; }).weight;
-            var maxW = logs.reduce(function(a, b) { return a.weight > b.weight ? a : b; }).weight;
-            var rango = maxW - minW || 1;
-            var html2 = '<div class="modal-handle"></div><div class="modal-title">Evolución de peso</div><div style="display:flex;align-items:flex-end;gap:6px;height:140px;padding:10px 0; border-bottom:1px solid var(--glass-border); margin-bottom:16px;">';
-            for (var wi = 0; wi < logs.length; wi++) {
-                var h = 30 + ((logs[wi].weight - minW) / rango) * 100;
-                html2 += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;"><div style="font-size:0.6rem;color:var(--text-primary); font-weight:700; margin-bottom:4px;">' + logs[wi].weight + '</div><div style="width:100%;max-width:24px;height:' + h + 'px;background:var(--accent);border-radius:6px 6px 2px 2px; box-shadow:0 0 10px var(--accent-glow);"></div><div style="font-size:0.55rem;color:var(--text-muted);margin-top:6px; font-weight:600;">' + logs[wi].date.substring(5).replace('-','/') + '</div></div>';
-            }
-            html2 += '</div><button class="btn btn-secondary" id="cerrarPeso">Cerrar</button>';
-            openModal(html2);
-            document.getElementById('cerrarPeso').addEventListener('click', closeModal);
-        });
-        document.getElementById('manageExercises').addEventListener('click', function() { openManageExercisesModal(); });
-        document.getElementById('exportarDatos').addEventListener('click', function() {
-            var backup = {
-                version: 1,
-                fecha: getToday(),
-                onboarded: appData.onboarded,
-                age: appData.age,
-                weight: appData.weight,
-                height: appData.height,
-                sex: appData.sex,
-                activityLevel: appData.activityLevel,
-                goalCalories: appData.goalCalories,
-                foods: appData.foods,
-                exercises: appData.exercises,
-                dailyLogs: appData.dailyLogs,
-                weightLog: appData.weightLog || []
-            };
-            var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'caloria_backup_' + getToday() + '.json';
-            a.click();
-            URL.revokeObjectURL(url);
-            alert('✅ Datos exportados correctamente.');
-        });
-        document.getElementById('importarDatos').addEventListener('click', function() {
-            document.getElementById('inputFile').click();
-        });
-        document.getElementById('inputFile').addEventListener('change', function(e) {
-            var file = e.target.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = function(ev) {
-                try {
-                    var backup = JSON.parse(ev.target.result);
-                    if (!backup.version) { alert('Archivo no válido.'); return; }
-                    if (confirm('⚠️ Esto SOBREESCRIBIRÁ todos tus datos actuales. ¿Estás seguro?')) {
-                        appData.onboarded = backup.onboarded !== undefined ? backup.onboarded : true;
-                        appData.age = backup.age || 30;
-                        appData.weight = backup.weight || 75;
-                        appData.height = backup.height || 175;
-                        appData.sex = backup.sex || 'M';
-                        appData.activityLevel = backup.activityLevel || 1.55;
-                        appData.goalCalories = backup.goalCalories || 2000;
-                        appData.foods = backup.foods || [];
-                        appData.exercises = backup.exercises || [];
-                        appData.dailyLogs = backup.dailyLogs || {};
-                        appData.weightLog = backup.weightLog || [];
-                        saveData();
-                        alert('✅ Datos importados correctamente. La app se actualizará.');
-                        location.reload();
-                    }
-                } catch (err) {
-                    alert('❌ Error al leer el archivo. Asegúrate de que sea un JSON válido.');
-                }
-            };
-            reader.readAsText(file);
-        });
+        document.getElementById('verPeso').addEventListener('click', () => { verEvolucionPeso(); });
+        document.getElementById('manageExercises').addEventListener('click', () => { openManageExercisesModal(); });
+        document.getElementById('exportarDatos').addEventListener('click', () => { exportarDatos(); });
+        document.getElementById('importarDatos').addEventListener('click', () => { document.getElementById('inputFile').click(); });
+        document.getElementById('inputFile').addEventListener('change', function(e) { importarDatos(e); });
     }
+    
+    // Actualizar solo los valores dinámicos
+    updateSettingsValues();
+}
+
+function updateSettingsValues() {
+    const valAge = document.getElementById('valAge');
+    const valWeight = document.getElementById('valWeight');
+    const valHeight = document.getElementById('valHeight');
+    const valSex = document.getElementById('valSex');
+    const valActivity = document.getElementById('valActivity');
+    const valGoal = document.getElementById('valGoal');
+    const valRegistrarPeso = document.getElementById('valRegistrarPeso');
+    const valFoodsCount = document.getElementById('valFoodsCount');
+    const valExercisesCount = document.getElementById('valExercisesCount');
+    
+    if (valAge) valAge.innerHTML = appData.age + ' años <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span>';
+    if (valWeight) valWeight.innerHTML = appData.weight + ' kg <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span>';
+    if (valHeight) valHeight.innerHTML = appData.height + ' cm <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span>';
+    if (valSex) valSex.innerHTML = (appData.sex === 'M' ? 'Masculino' : 'Femenino') + ' <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span>';
+    if (valActivity) valActivity.innerHTML = (['Sedentario','Ligero','Moderado','Intenso','Muy intenso'][['1.2','1.375','1.55','1.725','1.9'].indexOf(String(appData.activityLevel))] || 'Moderado') + ' <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span>';
+    if (valGoal) valGoal.textContent = appData.goalCalories;
+    if (valRegistrarPeso) valRegistrarPeso.innerHTML = appData.weight + ' kg <span style="color:var(--accent); font-weight:800; margin-left:8px;">+</span>';
+    if (valFoodsCount) valFoodsCount.innerHTML = appData.foods.length + ' creados <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span>';
+    if (valExercisesCount) valExercisesCount.innerHTML = appData.exercises.length + ' creados <span style="color:var(--accent); font-weight:800; margin-left:8px;">></span>';
+    
+    // Actualizar estadísticas de peso
+    updateWeightStats();
+}
+
+function updateWeightStats() {
+    const container = document.getElementById('weightStatsContainer');
+    if (!container) return;
+    
+    if (!appData.weightLog || appData.weightLog.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    var minPeso = appData.weightLog.reduce((a, b) => a.weight < b.weight ? a : b);
+    var maxPeso = appData.weightLog.reduce((a, b) => a.weight > b.weight ? a : b);
+    var html = '<div class="card" style="text-align:center;font-size:0.85rem;color:var(--text-muted); padding:16px; margin-bottom:8px; font-weight:600;">Mín: <span style="color:var(--text-primary);">' + minPeso.weight + ' kg</span> &nbsp;|&nbsp; Máx: <span style="color:var(--text-primary);">' + maxPeso.weight + ' kg</span> &nbsp;|&nbsp; Registros: <span style="color:var(--text-primary);">' + appData.weightLog.length + '</span></div>';
+    
+    if (appData.weightLog.length >= 3) {
+        var sorted = appData.weightLog.slice().sort((a, b) => a.date.localeCompare(b.date));
+        var first = sorted[0];
+        var last = sorted[sorted.length - 1];
+        var daysDiff = Math.max(1, Math.round((new Date(last.date + 'T00:00:00') - new Date(first.date + 'T00:00:00')) / 86400000));
+        var kgPerDay = (last.weight - first.weight) / daysDiff;
+        var kg30 = Math.round((last.weight + kgPerDay * 30) * 10) / 10;
+        var tendencia = kgPerDay < -0.01 ? 'bajando' : kgPerDay > 0.01 ? 'subiendo' : 'estable';
+        var emoji = tendencia === 'bajando' ? '📉' : tendencia === 'subiendo' ? '📈' : '📊';
+        html += '<div class="card" style="text-align:center;font-size:0.9rem;color:var(--text-secondary); padding:16px; line-height:1.5;">' + emoji + ' Tendencia: <strong style="color:var(--text-primary); text-transform:capitalize;">' + tendencia + '</strong><br>Si sigues así, en 30 días pesarás <strong style="color:var(--accent);">' + kg30 + ' kg</strong></div>';
+    }
+    container.innerHTML = html;
+}
+
+function verEvolucionPeso() {
+    if (!appData.weightLog || appData.weightLog.length === 0) {
+        alert('No hay datos de peso todavía.');
+        return;
+    }
+    var logs = appData.weightLog.slice(-30);
+    var minW = logs.reduce((a, b) => a.weight < b.weight ? a : b).weight;
+    var maxW = logs.reduce((a, b) => a.weight > b.weight ? a : b).weight;
+    var rango = maxW - minW || 1;
+    var html2 = '<div class="modal-handle"></div><div class="modal-title">Evolución de peso</div><div style="display:flex;align-items:flex-end;gap:6px;height:140px;padding:10px 0; border-bottom:1px solid var(--glass-border); margin-bottom:16px;">';
+    for (var wi = 0; wi < logs.length; wi++) {
+        var h = 30 + ((logs[wi].weight - minW) / rango) * 100;
+        html2 += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;"><div style="font-size:0.6rem;color:var(--text-primary); font-weight:700; margin-bottom:4px;">' + logs[wi].weight + '</div><div style="width:100%;max-width:24px;height:' + h + 'px;background:var(--accent);border-radius:6px 6px 2px 2px; box-shadow:0 0 10px var(--accent-glow);"></div><div style="font-size:0.55rem;color:var(--text-muted);margin-top:6px; font-weight:600;">' + logs[wi].date.substring(5).replace('-','/') + '</div></div>';
+    }
+    html2 += '</div><button class="btn btn-secondary" id="cerrarPeso">Cerrar</button>';
+    openModal(html2);
+    document.getElementById('cerrarPeso').addEventListener('click', closeModal);
+}
+
+function exportarDatos() {
+    var backup = {
+        version: 1,
+        fecha: getToday(),
+        onboarded: appData.onboarded,
+        age: appData.age,
+        weight: appData.weight,
+        height: appData.height,
+        sex: appData.sex,
+        activityLevel: appData.activityLevel,
+        goalCalories: appData.goalCalories,
+        foods: appData.foods,
+        exercises: appData.exercises,
+        dailyLogs: appData.dailyLogs,
+        weightLog: appData.weightLog || []
+    };
+    var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'caloria_backup_' + getToday() + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    alert('✅ Datos exportados correctamente.');
+}
+
+function importarDatos(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+        try {
+            var backup = JSON.parse(ev.target.result);
+            if (!backup.version) { alert('Archivo no válido.'); return; }
+            if (confirm('⚠️ Esto SOBREESCRIBIRÁ todos tus datos actuales. ¿Estás seguro?')) {
+                appData.onboarded = backup.onboarded !== undefined ? backup.onboarded : true;
+                appData.age = backup.age || 30;
+                appData.weight = backup.weight || 75;
+                appData.height = backup.height || 175;
+                appData.sex = backup.sex || 'M';
+                appData.activityLevel = backup.activityLevel || 1.55;
+                appData.goalCalories = backup.goalCalories || 2000;
+                appData.foods = backup.foods || [];
+                appData.exercises = backup.exercises || [];
+                appData.dailyLogs = backup.dailyLogs || {};
+                appData.weightLog = backup.weightLog || [];
+                saveData();
+                alert('✅ Datos importados correctamente. La app se actualizará.');
+                location.reload();
+            }
+        } catch (err) {
+            alert('❌ Error al leer el archivo. Asegúrate de que sea un JSON válido.');
+        }
+    };
+    reader.readAsText(file);
+}
 
     function openEditNumber(label, unit, current, min, max, callback, step) {
         step = step || 1;
@@ -1632,7 +1855,7 @@
         document.getElementById('editConfirm').addEventListener('click', function() { callback(val); closeModal(); });
     }
 
-    function openManageFoodsModal() {
+        function openManageFoodsModal() {
         let html = '<div class="modal-handle"></div><div class="modal-title">Mis alimentos (' + appData.foods.length + ')</div>';
         if (appData.foods.length === 0) html += '<div class="empty-state"><p>No hay alimentos creados.</p></div>';
         appData.foods.forEach(function(f) { html += '<div class="food-item" style="justify-content:space-between; margin-bottom:8px;"><span><strong style="font-size:1rem; display:block; margin-bottom:4px;">' + f.name + '</strong> <small style="color:var(--text-muted); font-weight:600;">' + f.refCalories + 'kcal / ' + f.refAmount + f.unit + '</small></span><button class="btn-remove" data-delete-food="' + f.id + '">✕</button></div>'; });
@@ -1644,7 +1867,7 @@
         });
     }
 
-    function openManageExercisesModal() {
+        function openManageExercisesModal() {
         let html = '<div class="modal-handle"></div><div class="modal-title">Mis ejercicios (' + appData.exercises.length + ')</div>';
         if (appData.exercises.length === 0) html += '<div class="empty-state"><p>No hay ejercicios creados.</p></div>';
         appData.exercises.forEach(function(e) { html += '<div class="food-item" style="justify-content:space-between; margin-bottom:8px;"><span><strong style="font-size:1rem; display:block; margin-bottom:4px;">' + e.name + '</strong> <small style="color:var(--text-muted); font-weight:600;">' + e.kcalPerMin + ' kcal/min</small></span><button class="btn-remove" data-delete-ex="' + e.id + '">✕</button></div>'; });
@@ -1658,7 +1881,8 @@
 
    // ============ NUEVO HISTORIAL ==========
 let historyChart = null;
-let historyMode = 'dia'; 
+let historyMode = 'dia';
+let historyChartCanvas = null;
 
 function formatDateShort(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
@@ -1722,19 +1946,51 @@ function renderGroupedExercises(exercises) {
 function renderHistoryScreen() {
     const container = document.getElementById('historyContainerNew');
     if (!container) return;
-    container.innerHTML = '<div class="insight-grid" id="statsPanel"></div><div class="glass-card" style="height:240px; padding:15px; margin-bottom:16px; border-radius:var(--radius-lg);"><canvas id="historyChartCanvas"></canvas></div><div class="glass-card" style="margin-bottom:24px; padding:20px; border-radius:var(--radius-lg);"><h4 style="margin:0 0 10px 0; font-weight:800; font-size:1.05rem;">🍽️ Radar de olvidados</h4><div id="staleRadar" class="radar-text">Calculando...</div></div><div class="hist-toggle-group"><button id="histToggleDia" class="hist-toggle-btn ' + (historyMode === 'dia' ? 'active' : '') + '">📆 DÍAS</button><button id="histToggleMes" class="hist-toggle-btn ' + (historyMode === 'mes' ? 'active' : '') + '">📅 MESES</button></div><div id="historyListContainer"></div><button id="clearHistoryBtn" class="btn-reset-hist">🗑️ BORRAR TODO EL HISTORIAL</button>';
 
-    document.getElementById('histToggleDia')?.addEventListener('click', () => { historyMode = 'dia'; renderHistoryScreen(); });
-    document.getElementById('histToggleMes')?.addEventListener('click', () => { historyMode = 'mes'; renderHistoryScreen(); });
-    document.getElementById('clearHistoryBtn')?.addEventListener('click', () => {
-        if (confirm('⚠️ ¿Borrar todos los registros de comidas y ejercicios? Esta acción no se puede deshacer.')) {
-            appData.dailyLogs = {};
-            saveData();
-            renderHistoryScreen();
-            renderDashboard();
-            showToast('Historial borrado');
-        }
-    });
+    const needsFullRebuild = !container.querySelector('.hist-toggle-group');
+    
+    if (needsFullRebuild) {
+        container.innerHTML = `
+            <div class="insight-grid" id="statsPanel"></div>
+            <div class="glass-card" style="height:240px; padding:15px; margin-bottom:16px; border-radius:var(--radius-lg);">
+                <canvas id="historyChartCanvas"></canvas>
+            </div>
+            <div class="glass-card" style="margin-bottom:24px; padding:20px; border-radius:var(--radius-lg);">
+                <h4 style="margin:0 0 10px 0; font-weight:800; font-size:1.05rem;">🍽️ Radar de olvidados</h4>
+                <div id="staleRadar" class="radar-text">Calculando...</div>
+            </div>
+            <div class="hist-toggle-group">
+                <button id="histToggleDia" class="hist-toggle-btn active">📆 DÍAS</button>
+                <button id="histToggleMes" class="hist-toggle-btn">📅 MESES</button>
+            </div>
+            <div id="historyListContainer"></div>
+            <button id="clearHistoryBtn" class="btn-reset-hist">🗑️ BORRAR TODO EL HISTORIAL</button>
+        `;
+
+        document.getElementById('histToggleDia').addEventListener('click', () => { 
+            historyMode = 'dia'; 
+            document.getElementById('histToggleDia').classList.add('active');
+            document.getElementById('histToggleMes').classList.remove('active');
+            updateStatsAndChart(); 
+            renderHistoryList(); 
+        });
+        document.getElementById('histToggleMes').addEventListener('click', () => { 
+            historyMode = 'mes'; 
+            document.getElementById('histToggleMes').classList.add('active');
+            document.getElementById('histToggleDia').classList.remove('active');
+            updateStatsAndChart(); 
+            renderHistoryList(); 
+        });
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            if (confirm('⚠️ ¿Borrar todos los registros de comidas y ejercicios? Esta acción no se puede deshacer.')) {
+                appData.dailyLogs = {};
+                saveData();
+                renderHistoryScreen();
+                renderDashboard();
+                showToast('Historial borrado');
+            }
+        });
+    }
 
     updateStatsAndChart();
     renderRadarOlvidados();
@@ -1756,8 +2012,10 @@ function updateStatsAndChart() {
     }
     let avgBalance = balances.reduce((a,b) => a+b, 0) / balances.length;
     document.getElementById('statsPanel').innerHTML = '<div class="insight-card"><span class="insight-lab">Total ingerido</span><span class="insight-val" style="color:var(--text-primary);">' + Math.round(totalIngested) + '</span></div><div class="insight-card"><span class="insight-lab">Balance medio</span><span class="insight-val" style="color:var(--accent);">' + Math.round(avgBalance) + '</span></div>';
-
-    const ctx = document.getElementById('historyChartCanvas').getContext('2d');
+    const canvas = document.getElementById('historyChartCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
     let labels = [], values = [];
     if (historyMode === 'dia') {
         let last7 = allDates.slice(-7);
@@ -1781,8 +2039,15 @@ function updateStatsAndChart() {
     const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
     const textColor = isDark ? '#a0a0b5' : '#606075';
 
-    if (historyChart) historyChart.destroy();
-    historyChart = new Chart(ctx, {
+    if (historyChart) {
+        historyChart.data.labels = labels;
+        historyChart.data.datasets[0].data = values;
+        historyChart.options.scales.x.ticks.color = textColor;
+        historyChart.options.scales.y.ticks.color = textColor;
+        historyChart.options.scales.y.grid.color = gridColor;
+        historyChart.update('none');
+    } else {
+        historyChart = new Chart(ctx, {
         type: 'line',
         data: { 
             labels: labels, 
@@ -1810,6 +2075,7 @@ function updateStatsAndChart() {
             }
         }
     });
+}
 }
 
 function renderRadarOlvidados() {
