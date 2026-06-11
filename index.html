@@ -763,10 +763,19 @@ body.light-mode .log-details { background: rgba(0,0,0,0.02); }
     }
     .sub-log-header:active, .sub-day-header:active { background: var(--bg-card-hover); }
     .sub-log-arrow, .sub-day-arrow { transition: transform 0.3s; color: var(--text-muted); font-size: 0.8rem; }
-    .sub-log-details, .sub-day-details { display: none; padding: 0 18px 10px 18px; }
-    .sub-day-group.open .sub-day-details { display: block; border-top: 1px solid var(--glass-border); padding-top: 10px; }
-    .sub-log-group.open .sub-log-details { display: block; border-top: 1px solid var(--glass-border); padding-top: 10px; }
-    .sub-log-group.open .sub-log-arrow, .sub-day-group.open .sub-day-arrow { transform: rotate(180deg); color: var(--accent); }
+    .sub-log-details, .sub-day-details {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 18px;
+    border-top: 1px solid transparent;
+    transition: max-height 0.35s ease, padding 0.35s ease, border-color 0.35s;
+}
+.sub-day-group.open .sub-day-details,
+.sub-log-group.open .sub-log-details {
+    max-height: 600px; /* suficiente para su contenido */
+    padding: 10px 18px;
+    border-top-color: var(--glass-border);
+}
 
     /* Fix Alineación Pestañas Historial */
     .align-right-fix {
@@ -918,30 +927,30 @@ body.light-mode .log-details { background: rgba(0,0,0,0.02); }
         if (!appData.dailyLogs) appData.dailyLogs = {};
         if (!appData.weightLog) appData.weightLog = [];
     }
+function applyTheme(mode) {
+    var btn = document.getElementById('btnTheme');
+    if (mode === 'light') {
+        document.body.classList.add('light-mode');
+        if (btn) btn.textContent = '☀️';
+    } else {
+        document.body.classList.remove('light-mode');
+        if (btn) btn.textContent = '🌙';
+    }
 
-    function applyTheme(mode) {
-        var btn = document.getElementById('btnTheme');
+    // Ajustar círculo de fondo del donut al nuevo tema
+    var donutBgCircle = document.querySelector('#donutSvg circle:first-child');
+    if (donutBgCircle) {
         if (mode === 'light') {
-            document.body.classList.add('light-mode');
-            if (btn) btn.textContent = '☀️';
-            if (document.querySelector('.donut-center .kcal-value')) {
-                document.querySelector('.donut-center .kcal-value').style.background = 'linear-gradient(180deg, #111118, #606075)';
-                document.querySelector('.donut-center .kcal-value').style.webkitBackgroundClip = 'text';
-            }
+            donutBgCircle.setAttribute('stroke', 'rgba(0,0,0,0.1)');
         } else {
-            document.body.classList.remove('light-mode');
-            if (btn) btn.textContent = '🌙';
-            if (document.querySelector('.donut-center .kcal-value')) {
-                document.querySelector('.donut-center .kcal-value').style.background = 'linear-gradient(180deg, #fff, #a0a0b5)';
-                document.querySelector('.donut-center .kcal-value').style.webkitBackgroundClip = 'text';
-            }
+            donutBgCircle.setAttribute('stroke', 'rgba(255,255,255,0.04)');
         }
-        localStorage.setItem('caloria_theme', mode);
-        if(historyChart && !document.getElementById('modalOverlay').classList.contains('active')) updateStatsAndChart();
     }
-    function detectSystemTheme() {
-        return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    }
+
+    localStorage.setItem('caloria_theme', mode);
+    if(historyChart && !document.getElementById('modalOverlay').classList.contains('active')) updateStatsAndChart();
+}
+    
     function initTheme() {
         var savedTheme = localStorage.getItem('caloria_theme');
         if (savedTheme) {
@@ -1127,7 +1136,6 @@ function openModal(html) {
         else if (balance > goal * 0.85) arcColor = 'var(--warning)';
         else arcColor = 'var(--success)';
         document.getElementById('donutArc').setAttribute('stroke', arcColor);
-        document.getElementById('donutKcal').style.color = arcColor;
 
         let sugText = '';
         if (remaining > 0 && appData.foods.length > 0) {
@@ -1688,7 +1696,7 @@ function openModal(html) {
 
             <div class="settings-data-section" style="margin-bottom: 24px;">
                 <strong style="font-size:0.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px; margin-left: 10px; margin-bottom: 10px; display:block;">📤 Datos</strong>
-                <div class="card" id="exportarDatos" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span style="font-weight:600;">📤 Exportar datos (JSON)</span><span style="color:var(--accent); font-weight:800;">></span></div>
+                <div class="card" id="exportarDatos" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span style="font-weight:600;">💾 Guardar copia (JSON)</span><span style="color:var(--accent); font-weight:800;">></span></div>
                 <div class="card" id="importarDatos" style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px; padding:18px 24px;"><span style="font-weight:600;">📥 Importar datos (JSON)</span><span style="color:var(--accent); font-weight:800;">></span></div>
                 <input type="file" id="inputFile" accept=".json" style="display:none;">
             </div>
@@ -1827,14 +1835,42 @@ function exportarDatos() {
         dailyLogs: appData.dailyLogs,
         weightLog: appData.weightLog || []
     };
-    var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'caloria_backup_' + getToday() + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    alert('✅ Datos exportados correctamente.');
+    var jsonStr = JSON.stringify(backup, null, 2);
+    var blob = new Blob([jsonStr], { type: 'application/json' });
+    var file = new File([blob], 'caloria_backup_' + getToday() + '.json', { type: 'application/json' });
+
+    // Intentar primero con Web Share API (iOS Safari 14+, Android Chrome)
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+            files: [file],
+            title: 'Copia de seguridad Caloria',
+            text: 'Guarda este archivo para restaurar tus datos más tarde.'
+        }).then(function() {
+            showToast('✅ Archivo listo para guardar');
+        }).catch(function(err) {
+            // Si falla o el usuario cancela, usar descarga tradicional
+            descargarTradicional(blob);
+        });
+    } else {
+        descargarTradicional(blob);
+    }
+
+    function descargarTradicional(blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'caloria_backup_' + getToday() + '.json';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        // Fallback para iOS/Safari: abre el archivo en nueva pestaña (permite guardar manualmente)
+        setTimeout(function() {
+            window.open(url, '_blank');
+        }, 800);
+        showToast('✅ Datos exportados. Si no se descarga, revisa los pop-ups o usa "Compartir".');
+        // La URL se revoca automáticamente al cerrar la página; no la revocamos antes para no cortar la descarga
+    }
 }
 
 function importarDatos(e) {
