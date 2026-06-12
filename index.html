@@ -1837,40 +1837,19 @@ function exportarDatos() {
     };
     var jsonStr = JSON.stringify(backup, null, 2);
     var blob = new Blob([jsonStr], { type: 'application/json' });
-    var file = new File([blob], 'caloria_backup_' + getToday() + '.json', { type: 'application/json' });
-
-    // Intentar primero con Web Share API (iOS Safari 14+, Android Chrome)
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-            files: [file],
-            title: 'Copia de seguridad Caloria',
-            text: 'Guarda este archivo para restaurar tus datos más tarde.'
-        }).then(function() {
-            showToast('✅ Archivo listo para guardar');
-        }).catch(function(err) {
-            // Si falla o el usuario cancela, usar descarga tradicional
-            descargarTradicional(blob);
-        });
-    } else {
-        descargarTradicional(blob);
-    }
-
-    function descargarTradicional(blob) {
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'caloria_backup_' + getToday() + '.json';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        // Fallback para iOS/Safari: abre el archivo en nueva pestaña (permite guardar manualmente)
-        setTimeout(function() {
-            window.open(url, '_blank');
-        }, 800);
-        showToast('✅ Datos exportados. Si no se descarga, revisa los pop-ups o usa "Compartir".');
-        // La URL se revoca automáticamente al cerrar la página; no la revocamos antes para no cortar la descarga
-    }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'caloria_backup_' + getToday() + '.json';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('✅ Copia de seguridad descargada');
+    // Liberar la URL después de un breve tiempo
+    setTimeout(function() {
+        URL.revokeObjectURL(url);
+    }, 2000);
 }
 
 function importarDatos(e) {
@@ -1922,8 +1901,17 @@ function importarDatos(e) {
         openModal(html);
         document.getElementById('closeManageFoods').addEventListener('click', closeModal);
         document.querySelectorAll('#modalSheet button[data-delete-food]').forEach(function(b) {
-            b.addEventListener('click', function(e) { e.stopPropagation(); if (confirm('¿Eliminar este alimento permanentemente?')) { appData.foods = appData.foods.filter(function(f) { return f.id !== this.dataset.deleteFood; }); saveData(); closeModal(); renderSettingsScreen(); } });
-        });
+    b.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var foodId = this.dataset.deleteFood;
+        if (confirm('¿Eliminar este alimento permanentemente?')) {
+            appData.foods = appData.foods.filter(function(f) { return f.id !== foodId; });
+            saveData();
+            closeModal();
+            renderSettingsScreen();
+        }
+    });
+});
     }
 
         function openManageExercisesModal() {
@@ -1934,8 +1922,17 @@ function importarDatos(e) {
         openModal(html);
         document.getElementById('closeManageEx').addEventListener('click', closeModal);
         document.querySelectorAll('#modalSheet button[data-delete-ex]').forEach(function(b) {
-            b.addEventListener('click', function(e) { e.stopPropagation(); if (confirm('¿Eliminar este ejercicio permanentemente?')) { appData.exercises = appData.exercises.filter(function(e) { return e.id !== this.dataset.deleteEx; }); saveData(); closeModal(); renderSettingsScreen(); } });
-        });
+    b.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var exId = this.dataset.deleteEx;
+        if (confirm('¿Eliminar este ejercicio permanentemente?')) {
+            appData.exercises = appData.exercises.filter(function(e) { return e.id !== exId; });
+            saveData();
+            closeModal();
+            renderSettingsScreen();
+        }
+    });
+});
     }
 
    // ============ NUEVO HISTORIAL ==========
