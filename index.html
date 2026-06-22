@@ -1368,27 +1368,60 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
 
     // ============ FOOD SELECTOR ============
     function renderFoodSelector() {
-        let html = '';
-        if (appData.foods.length === 0) {
-            html += '<div class="empty-state"><div class="empty-icon">🍽️</div><p>No tienes alimentos creados.</p><p style="font-size:0.85rem; margin-top:8px;">Crea uno para empezar.</p></div>';
-        } else {
-            for (const food of appData.foods) {
-                html += '<div class="food-item" data-food-id="' + food.id + '"><span class="food-emoji">🍎</span><span class="food-info"><div class="food-name">' + food.name + '</div><span class="food-ref">' + food.refCalories + ' kcal / ' + food.refAmount + food.unit + '</span></span><span class="food-kcal-badge">+</span></div>';
-            }
+    let html = '';
+    // Input de búsqueda
+    html += '<div class="input-group" style="margin-bottom: 16px;">';
+    html += '<input type="text" id="foodSearchInput" placeholder="🔍 Buscar alimento..." autocomplete="off" style="margin-bottom:0;">';
+    html += '</div>';
+    
+    if (appData.foods.length === 0) {
+        html += '<div id="foodListContainer"><div class="empty-state"><div class="empty-icon">🍽️</div><p>No tienes alimentos creados.</p><p style="font-size:0.85rem; margin-top:8px;">Crea uno para empezar.</p></div></div>';
+    } else {
+        html += '<div id="foodListContainer">';
+        for (const food of appData.foods) {
+            html += '<div class="food-item" data-food-id="' + food.id + '" data-food-name="' + food.name.toLowerCase() + '"><span class="food-emoji">🍎</span><span class="food-info"><div class="food-name">' + food.name + '</div><span class="food-ref">' + food.refCalories + ' kcal / ' + food.refAmount + food.unit + '</span></span><span class="food-kcal-badge">+</span></div>';
         }
-        html += '<button class="btn btn-secondary" id="btnCreateFoodFromSelector" style="margin-top:16px;">➕ Crear nuevo alimento</button>';
-        document.getElementById('foodSelectorContainer').innerHTML = html;
-
-        document.querySelectorAll('#foodSelectorContainer .food-item').forEach(function(item) {
-            item.addEventListener('click', function() {
-                const foodId = this.dataset.foodId;
-                const food = appData.foods.find(function(f) { return f.id === foodId; });
-                if (!food) return;
-                openConsumeFoodModal(food);
-            });
-        });
-        document.getElementById('btnCreateFoodFromSelector').addEventListener('click', function() { openCreateFoodModal(); });
+        html += '</div>';
+        html += '<div id="foodNoResults" class="empty-state" style="display:none;"><div class="empty-icon">🔍</div><p>Sin resultados</p></div>';
     }
+    html += '<button class="btn btn-secondary" id="btnCreateFoodFromSelector" style="margin-top:16px;">➕ Crear nuevo alimento</button>';
+    
+    document.getElementById('foodSelectorContainer').innerHTML = html;
+
+    // Listeners de click en alimentos
+    document.querySelectorAll('#foodListContainer .food-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+            const foodId = this.dataset.foodId;
+            const food = appData.foods.find(function(f) { return f.id === foodId; });
+            if (!food) return;
+            openConsumeFoodModal(food);
+        });
+    });
+    document.getElementById('btnCreateFoodFromSelector').addEventListener('click', function() { openCreateFoodModal(); });
+    
+    // Filtro de búsqueda
+    var searchInput = document.getElementById('foodSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var query = this.value.toLowerCase().trim();
+            var items = document.querySelectorAll('#foodListContainer .food-item');
+            var noResults = document.getElementById('foodNoResults');
+            var visibleCount = 0;
+            items.forEach(function(item) {
+                var name = item.dataset.foodName || '';
+                if (query === '' || name.indexOf(query) !== -1) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            if (noResults) {
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        });
+    }
+}
 
         function openConsumeFoodModal(food) {
         let html = '<div class="modal-handle"></div><div class="modal-title">¿Cuánto vas a consumir?</div><p style="text-align:center;color:var(--text-secondary);font-size:0.95rem; font-weight:600;">' + food.name + ' · ' + food.refCalories + ' kcal por ' + food.refAmount + food.unit + '</p><div class="stepper"><button id="stepperDown">−</button><div style="text-align:center;"><span class="stepper-value" id="stepperValue" style="cursor:text;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:6px;">' + food.refAmount + '</span><span class="stepper-unit">' + food.unit + '</span></div><button id="stepperUp">+</button></div><div class="result-display"><div class="result-kcal" id="resultKcal">' + food.refCalories + ' kcal</div><div class="result-macros" id="resultMacros">' + (food.protein ? 'P:'+food.protein+'g' : '') + ' ' + (food.carbs ? 'C:'+food.carbs+'g' : '') + ' ' + (food.fat ? 'G:'+food.fat+'g' : '') + '</div></div><button class="btn btn-primary" id="btnConfirmConsume">Añadir al día ✓</button><button class="btn btn-secondary" id="btnCancelConsume" style="margin-top:12px;">Cancelar</button>';
@@ -1593,27 +1626,60 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
 
     // ============ EXERCISE SELECTOR ============
     function renderExerciseSelector() {
-        let html = '';
-        if (appData.exercises.length === 0) {
-            html += '<div class="empty-state"><div class="empty-icon">🏋️</div><p>No tienes ejercicios creados.</p></div>';
-        } else {
-            for (const ex of appData.exercises) {
-                html += '<div class="food-item" data-ex-id="' + ex.id + '"><span class="food-emoji">🏃</span><span class="food-info"><div class="food-name">' + ex.name + '</div><span class="food-ref">' + ex.kcalPerMin + ' kcal/min</span></span><span class="food-kcal-badge">+</span></div>';
-            }
+    let html = '';
+    // Input de búsqueda
+    html += '<div class="input-group" style="margin-bottom: 16px;">';
+    html += '<input type="text" id="exerciseSearchInput" placeholder="🔍 Buscar ejercicio..." autocomplete="off" style="margin-bottom:0;">';
+    html += '</div>';
+    
+    if (appData.exercises.length === 0) {
+        html += '<div id="exerciseListContainer"><div class="empty-state"><div class="empty-icon">🏋️</div><p>No tienes ejercicios creados.</p></div></div>';
+    } else {
+        html += '<div id="exerciseListContainer">';
+        for (const ex of appData.exercises) {
+            html += '<div class="food-item" data-ex-id="' + ex.id + '" data-ex-name="' + ex.name.toLowerCase() + '"><span class="food-emoji">🏃</span><span class="food-info"><div class="food-name">' + ex.name + '</div><span class="food-ref">' + ex.kcalPerMin + ' kcal/min</span></span><span class="food-kcal-badge">+</span></div>';
         }
-        html += '<button class="btn btn-secondary" id="btnCreateExerciseFromSelector" style="margin-top:16px;">➕ Crear nuevo ejercicio</button>';
-        document.getElementById('exerciseSelectorContainer').innerHTML = html;
-
-        document.querySelectorAll('#exerciseSelectorContainer .food-item').forEach(function(item) {
-            item.addEventListener('click', function() {
-                const exId = this.dataset.exId;
-                const ex = appData.exercises.find(function(e) { return e.id === exId; });
-                if (!ex) return;
-                openConsumeExerciseModal(ex);
-            });
-        });
-        document.getElementById('btnCreateExerciseFromSelector').addEventListener('click', function() { openCreateExerciseModal(); });
+        html += '</div>';
+        html += '<div id="exerciseNoResults" class="empty-state" style="display:none;"><div class="empty-icon">🔍</div><p>Sin resultados</p></div>';
     }
+    html += '<button class="btn btn-secondary" id="btnCreateExerciseFromSelector" style="margin-top:16px;">➕ Crear nuevo ejercicio</button>';
+    
+    document.getElementById('exerciseSelectorContainer').innerHTML = html;
+
+    // Listeners de click en ejercicios
+    document.querySelectorAll('#exerciseListContainer .food-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+            const exId = this.dataset.exId;
+            const ex = appData.exercises.find(function(e) { return e.id === exId; });
+            if (!ex) return;
+            openConsumeExerciseModal(ex);
+        });
+    });
+    document.getElementById('btnCreateExerciseFromSelector').addEventListener('click', function() { openCreateExerciseModal(); });
+    
+    // Filtro de búsqueda
+    var searchInput = document.getElementById('exerciseSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var query = this.value.toLowerCase().trim();
+            var items = document.querySelectorAll('#exerciseListContainer .food-item');
+            var noResults = document.getElementById('exerciseNoResults');
+            var visibleCount = 0;
+            items.forEach(function(item) {
+                var name = item.dataset.exName || '';
+                if (query === '' || name.indexOf(query) !== -1) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            if (noResults) {
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        });
+    }
+}
 
         function openConsumeExerciseModal(exercise) {
         let html = '<div class="modal-handle"></div><div class="modal-title">¿Cuántos minutos?</div><p style="text-align:center;color:var(--text-secondary);font-size:0.95rem; font-weight:600;">' + exercise.name + ' · ' + exercise.kcalPerMin + ' kcal/min</p><div class="stepper"><button id="stepperDownEx">−</button><div style="text-align:center;"><span class="stepper-value" id="stepperValueEx" style="cursor:text;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:6px;">30</span><span class="stepper-unit">min</span></div><button id="stepperUpEx">+</button></div><div class="result-display"><div class="result-kcal" id="resultKcalEx">' + (exercise.kcalPerMin * 30) + ' kcal</div></div><button class="btn btn-primary" id="btnConfirmEx">Añadir al día ✓</button><button class="btn btn-secondary" id="btnCancelEx" style="margin-top:12px;">Cancelar</button>';
