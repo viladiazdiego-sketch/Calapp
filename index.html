@@ -905,18 +905,19 @@ body.light-mode .log-details { background: rgba(0,0,0,0.02); }
 (function() {
     const STORAGE_KEY = 'caloria_app_data_v1';
     let appData = {
-        onboarded: false,
-        age: 30,
-        weight: 75,
-        height: 175,
-        sex: 'M',
-        activityLevel: 1.55,
-        goalCalories: 2000,
-        foods: [],
-        exercises: [],
-        dailyLogs: {},
-        weightLog: []
-    };
+    onboarded: false,
+    age: 30,
+    weight: 75,
+    height: 175,
+    sex: 'M',
+    activityLevel: 1.55,
+    goalCalories: 2000,
+    foods: [],
+    exercises: [],
+    dailyLogs: {},
+    weightLog: [],
+    nightConfirmed: null
+};
 
     function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
     function loadData() {
@@ -937,15 +938,10 @@ function applyTheme(mode) {
         if (btn) btn.textContent = '🌙';
     }
 
-    // Ajustar círculo de fondo del donut al nuevo tema
-    var donutBgCircle = document.querySelector('#donutSvg circle:first-child');
-    if (donutBgCircle) {
-        if (mode === 'light') {
-            donutBgCircle.setAttribute('stroke', 'rgba(0,0,0,0.1)');
-        } else {
-            donutBgCircle.setAttribute('stroke', 'rgba(255,255,255,0.04)');
-        }
-    }
+    // Forzar re-render del dashboard para actualizar el donut
+if (document.getElementById('screen-dashboard').classList.contains('active')) {
+    renderDashboard();
+}
 
     localStorage.setItem('caloria_theme', mode);
     if(historyChart && !document.getElementById('modalOverlay').classList.contains('active')) updateStatsAndChart();
@@ -974,28 +970,55 @@ function applyTheme(mode) {
     }
 
     function getToday() {
-        const d = new Date();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const now = new Date();
+    const realToday = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    const hour = now.getHours();
+    // Entre las 0:00 y las 5:00 seguimos en el día anterior, salvo que se haya confirmado explícitamente
+    if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return yesterday.getFullYear() + '-' + String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + String(yesterday.getDate()).padStart(2, '0');
     }
+    // Si ya son las 5 o más, o se confirmó manualmente, usar la fecha real
+    if (hour >= 5 && appData.nightConfirmed !== realToday) {
+        appData.nightConfirmed = realToday;
+    }
+    return realToday;
+}
 
-    function getLog(dateStr) {
-        if (!appData.dailyLogs[dateStr]) {
-            appData.dailyLogs[dateStr] = { meals: { breakfast: [], lunch: [], dinner: [], snacks: [] }, exercises: [] };
-        }
-        return appData.dailyLogs[dateStr];
+function confirmNightChange() {
+    const now = new Date();
+    const realToday = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    appData.nightConfirmed = realToday;
+    saveData();
+    renderDashboard();
+    if (document.getElementById('screen-meals').classList.contains('active')) renderMealsScreen();
+    if (document.getElementById('screen-exercise').classList.contains('active')) renderExerciseScreen();
+    if (document.getElementById('screen-history').classList.contains('active')) renderHistoryScreen();
+}
+
+    function getLog(dateStr, createIfMissing) {
+    if (createIfMissing === undefined) createIfMissing = true;
+    if (!appData.dailyLogs[dateStr]) {
+        if (!createIfMissing) return null;
+        appData.dailyLogs[dateStr] = { meals: { breakfast: [], lunch: [], dinner: [], snacks: [] }, exercises: [] };
     }
+    return appData.dailyLogs[dateStr];
+}
 
     function calcMealKcal(mealItems) { return mealItems.reduce((sum, item) => sum + (item.kcal || 0), 0); }
     function calcDayIngested(dateStr) {
-        const log = getLog(dateStr);
-        let total = 0;
-        for (const meal of Object.values(log.meals)) total += calcMealKcal(meal);
-        return Math.round(total);
-    }
+    const log = getLog(dateStr, false);
+    if (!log) return 0;
+    let total = 0;
+    for (const meal of Object.values(log.meals)) total += calcMealKcal(meal);
+    return Math.round(total);
+}
     function calcDayBurned(dateStr) {
-        const log = getLog(dateStr);
-        return Math.round(log.exercises.reduce((sum, ex) => sum + (ex.kcal || 0), 0));
-    }
+    const log = getLog(dateStr, false);
+    if (!log) return 0;
+    return Math.round(log.exercises.reduce((sum, ex) => sum + (ex.kcal || 0), 0));
+}
     function calcDayBalance(dateStr) { return calcDayIngested(dateStr) - calcDayBurned(dateStr); }
 
     function recalcGoal() {
@@ -1196,6 +1219,27 @@ function openModal(html) {
             }
         }
         document.getElementById('suggestionText').innerHTML = sugText;
+
+// ---- Banner de extensión nocturna ----
+var nightBanner = document.getElementById('nightBanner');
+var now = new Date();
+var realToday = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+var hour = now.getHours();
+if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
+    if (!nightBanner) {
+        nightBanner = document.createElement('div');
+        nightBanner.id = 'nightBanner';
+        nightBanner.style.cssText = 'background:rgba(124,58,237,0.2); border:1px solid var(--accent); border-radius:var(--radius-lg); padding:14px 20px; margin-top:20px; text-align:center; cursor:pointer; font-weight:700; color:var(--text-primary);';
+        nightBanner.innerHTML = '🌙 Son más de las 00:00. Estás registrando en <strong id="nightDateLabel"></strong>.<br><small style="color:var(--text-secondary);">Toca aquí para pasar al día siguiente</small>';
+        nightBanner.addEventListener('click', confirmNightChange);
+        var suggestionCard = document.getElementById('suggestionCard');
+        suggestionCard.parentNode.insertBefore(nightBanner, suggestionCard.nextSibling);
+    }
+    var nightDateLabel = document.getElementById('nightDateLabel');
+    if (nightDateLabel) nightDateLabel.textContent = formatDateLong(getToday());
+} else {
+    if (nightBanner) nightBanner.remove();
+}
 
         // Distribucion de macros del dia
         var macrosToday = { protein: 0, carbs: 0, fat: 0 };
@@ -2337,8 +2381,15 @@ group.classList.toggle('open');
     }
 
     setInterval(function() {
-        if (document.getElementById('screen-dashboard').classList.contains('active')) renderDashboard();
-    }, 120000);
+    var now = new Date();
+    var hour = now.getHours();
+    var realToday = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    // Si pasan de las 5 y aún no se había confirmado, forzar cambio automático
+    if (hour >= 5 && appData.nightConfirmed !== realToday && document.getElementById('nightBanner')) {
+        confirmNightChange();
+    }
+    if (document.getElementById('screen-dashboard').classList.contains('active')) renderDashboard();
+}, 60000);
 
     setTimeout(function() { initTheme(); }, 200);
     console.log('🔥 Caloria app initialized successfully!');
