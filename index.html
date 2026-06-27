@@ -62,13 +62,18 @@
         --shadow-card-light: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
     }
     * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
-        -webkit-user-select: none;
-        user-select: none;
-    }
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn, .nav-item, .screen-header, .bottom-nav, .modal-handle, .stepper button,
+.btn-remove, .btn-add-meal, .card, .food-item, .log-header, .log-group,
+.sub-log-header, .sub-day-header, .hist-toggle-btn, .badge-count,
+.btn-theme, .onboarding-steps, .step-dot {
+    -webkit-user-select: none;
+    user-select: none;
+}
     html {
         font-size: 16px;
         scroll-behavior: smooth;
@@ -101,12 +106,12 @@
         contain: layout style;
     }
     
-    /* Orbes de fondo más elegantes */
+        /* Orbes de fondo y partículas */
     .bg-orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(140px);
-    opacity: 0.15;
+    filter: blur(120px);
+    opacity: 0.12;
     pointer-events: none;
     z-index: 0;
     animation: orbFloat 25s ease-in-out infinite alternate;
@@ -114,11 +119,31 @@
     .bg-orb.orb-1 { width: 350px; height: 350px; background: var(--accent); top: -100px; right: -100px; animation-duration: 30s; }
     .bg-orb.orb-2 { width: 300px; height: 300px; background: var(--accent-2); bottom: 5%; left: -100px; animation-delay: -10s; }
     .bg-orb.orb-3 { width: 200px; height: 200px; background: var(--accent); top: 50%; right: -50px; animation-delay: -15s; opacity: 0.08; }
-    
+    .particles-container {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+    }
+    .particle {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: rgba(255,255,255,0.4);
+        border-radius: 50%;
+        animation: particleFloat 8s ease-in-out infinite;
+    }
     @keyframes orbFloat {
         0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-        50% { transform: translate(40px, -40px) scale(1.1) rotate(10deg); }
-        100% { transform: translate(-20px, 30px) scale(0.95) rotate(-5deg); }
+        50% { transform: translate(60px, -50px) scale(1.15) rotate(10deg); }
+        100% { transform: translate(-30px, 40px) scale(0.9) rotate(-5deg); }
+    }
+    @keyframes particleFloat {
+        0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+        20% { opacity: 0.8; }
+        50% { transform: translateY(-80px) translateX(30px); opacity: 0.4; }
+        80% { opacity: 0; }
     }
     
     .app-container {
@@ -157,19 +182,21 @@
         z-index: 2;
     }
     .screen-header {
-        padding: 20px 24px 16px;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: rgba(5, 5, 8, 0.75);
-        background: rgba(5, 5, 8, 0.92);
-        border-bottom: 1px solid var(--glass-border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: var(--header-height);
-        transition: background-color var(--transition-slow);
-    }
+    padding: 20px 24px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(5, 5, 8, 0.6);
+    backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--header-height);
+    transition: all var(--transition-slow);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
     .screen-header h1 {
         font-size: 1.4rem;
         font-weight: 800;
@@ -190,23 +217,25 @@
     
     /* Barra de navegación flotante moderna */
     .bottom-nav {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 100;
-        background: rgba(13, 13, 20, 0.85);
-        background: rgba(13, 13, 20, 0.92);
-        border-top: 1px solid var(--glass-border);
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        padding: 6px 6px;
-        padding-bottom: max(6px, var(--safe-bottom));
-        min-height: var(--nav-height);
-        gap: 2px;
-        transition: background-color var(--transition-slow);
-    }
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(13, 13, 20, 0.7);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 6px 6px;
+    padding-bottom: max(6px, var(--safe-bottom));
+    min-height: var(--nav-height);
+    gap: 2px;
+    transition: all var(--transition-slow);
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.5);
+}
     .nav-item {
         display: flex;
         flex-direction: column;
@@ -245,44 +274,47 @@
     
     /* Tarjetas Modernizadas */
     .card {
-        background: var(--bg-card);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius);
-        padding: 22px 24px;
-        background: rgba(255, 255, 255, 0.06);
-        transition: all var(--transition-fast);
-        cursor: pointer;
-        box-shadow: var(--shadow-card);
-        position: relative;
-        overflow: hidden;
-    }
-    .card:active {
-        transform: scale(0.97);
-        background: var(--bg-card-hover);
-        border-color: var(--glass-border-strong);
-    }
-    .card::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.1) 0%, transparent 60%);
-        opacity: 0;
-        transition: opacity 0.4s;
-        pointer-events: none;
-    }
-    .card.ripple-active::after {
-        opacity: 1;
-        transition: opacity 0s;
-    }
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+}
+.card:active {
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.15) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+}
+.card.ripple-active::after {
+    opacity: 1;
+    transition: opacity 0s;
+}
     .glass-card {
-        background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-        border: 1px solid var(--glass-border-strong);
-        border-radius: var(--radius-lg);
-        padding: 26px;
-        background: rgba(255, 255, 255, 0.07);
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
-        transition: all var(--transition);
-    }
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: 26px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
     
     /* Botones Premium */
     .btn {
@@ -312,18 +344,41 @@
     .btn:active::after { opacity: 1; transition: opacity 0s; }
     .btn:active { transform: scale(0.95); }
     .btn-primary {
-        background: linear-gradient(135deg, var(--accent) 0%, #5b21b6 100%);
-        color: #fff;
-        box-shadow: 0 8px 25px var(--accent-glow);
-        width: 100%;
-    }
-    .btn-secondary {
-        background: var(--bg-card);
-        color: var(--text-primary);
-        border: 1px solid var(--glass-border-strong);
-        width: 100%;
-        box-shadow: var(--shadow-card);
-    }
+    background: linear-gradient(135deg, var(--accent) 0%, #5b21b6 100%);
+    background-size: 200% 200%;
+    animation: btnShimmer 4s ease infinite;
+    color: #fff;
+    box-shadow: 0 8px 30px rgba(124, 58, 237, 0.5);
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+.btn-primary:active::before { opacity: 1; }
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+@keyframes btnShimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
     .btn-sm { padding: 12px 20px; font-size: 0.85rem; border-radius: 30px; }
     
     /* Donut Chart */
@@ -641,8 +696,11 @@
         --text-muted: var(--text-muted-light);
         --shadow-card: var(--shadow-card-light);
     }
-    body.light-mode .screen-header { background: rgba(244, 244, 249, 0.85); }
-    body.light-mode .bottom-nav { background: rgba(255, 255, 255, 0.9); }
+    body.light-mode .screen-header { background: rgba(244, 244, 249, 0.6); backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); }
+body.light-mode .bottom-nav { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); }
+body.light-mode .card { background: rgba(255, 255, 255, 0.5); border-color: rgba(0,0,0,0.06); box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+body.light-mode .glass-card { background: rgba(255, 255, 255, 0.5); border-color: rgba(0,0,0,0.08); box-shadow: 0 8px 40px rgba(0,0,0,0.08); }
+body.light-mode .btn-secondary { background: rgba(255, 255, 255, 0.6); border-color: rgba(0,0,0,0.08); }
     body.light-mode .modal-overlay { background: rgba(0, 0, 0, 0.25); }
     body.light-mode input[type="text"], body.light-mode input[type="number"], body.light-mode select { background: rgba(0, 0, 0, 0.03); color: #111118; border-color: rgba(0, 0, 0, 0.1); }
     body.light-mode .result-display { background: rgba(0,0,0,0.02); }
@@ -789,8 +847,9 @@ body.light-mode .log-details { background: rgba(0,0,0,0.02); }
     <div class="toast-container" id="toastContainer"></div>
     <div class="app-wrapper" id="appWrapper">
         <div class="bg-orb orb-1"></div>
-        <div class="bg-orb orb-2"></div>
-        <div class="bg-orb orb-3"></div>
+<div class="bg-orb orb-2"></div>
+<div class="bg-orb orb-3"></div>
+<div class="particles-container" id="particlesContainer"></div>
         <div class="app-container" id="appContainer">
             <div class="screens" id="screensContainer">
                 <div class="screen active" id="screen-onboarding">
@@ -843,7 +902,20 @@ body.light-mode .log-details { background: rgba(0,0,0,0.02); }
                             <div class="balance-item"><div class="bal-value bal-out" id="balBurned">0</div><div class="bal-label">Quemado</div></div>
                             <div class="balance-item"><div class="bal-value bal-net" id="balNet">0</div><div class="bal-label">Balance</div></div>
                         </div>
-                        <div class="glass-card" id="suggestionCard">
+<div class="glass-card" id="weeklyCard" style="padding:16px 20px; margin-bottom:0; display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:700; font-size:0.9rem;">📊 Media semanal</span>
+        <span style="font-weight:800; font-size:1.1rem;" id="weeklyBalance">0 kcal</span>
+    </div>
+    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px; font-weight:600;" id="weeklyLabel"></div>
+</div>
+<div class="glass-card" id="reminderCard" style="padding:14px 20px; margin-bottom:0; display:none; background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.25);">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.3rem;">⏰</span>
+        <span style="font-weight:700; font-size:0.9rem;" id="reminderText"></span>
+    </div>
+</div>
+<div class="glass-card" id="suggestionCard">
                             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
                                 <span style="font-size: 1.2rem;">&#x1F4A1;</span><strong style="font-size:1rem; letter-spacing: -0.3px;">Sugerencia</strong>
                             </div>
@@ -853,14 +925,24 @@ body.light-mode .log-details { background: rgba(0,0,0,0.02); }
                 </div>
 
                 <div class="screen" id="screen-meals">
-                    <div class="screen-header"><h1>&#x1F372; Comidas</h1><span class="header-date" id="mealsHeaderDate"></span></div>
-                    <div class="screen-body" id="mealsContainer"></div>
-                </div>
+    <div class="screen-header" style="gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-sm btn-secondary" id="btnPrevDay" style="width:auto;padding:8px 12px;font-size:1rem;">◀</button>
+        <h1 style="flex:1;text-align:center;font-size:1.2rem;">&#x1F372; Comidas</h1>
+        <button class="btn btn-sm btn-secondary" id="btnNextDay" style="width:auto;padding:8px 12px;font-size:1rem;">▶</button>
+        <span class="header-date" id="mealsHeaderDate" style="width:100%;text-align:center;margin-top:4px;"></span>
+    </div>
+    <div class="screen-body" id="mealsContainer"></div>
+</div>
 
                 <div class="screen" id="screen-exercise">
-                    <div class="screen-header"><h1>&#x1F3C3; Ejercicio</h1><span class="header-date" id="exerciseHeaderDate"></span></div>
-                    <div class="screen-body" id="exerciseContainer"></div>
-                </div>
+    <div class="screen-header" style="gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-sm btn-secondary" id="btnPrevDayEx" style="width:auto;padding:8px 12px;font-size:1rem;">◀</button>
+        <h1 style="flex:1;text-align:center;font-size:1.2rem;">&#x1F3C3; Ejercicio</h1>
+        <button class="btn btn-sm btn-secondary" id="btnNextDayEx" style="width:auto;padding:8px 12px;font-size:1rem;">▶</button>
+        <span class="header-date" id="exerciseHeaderDate" style="width:100%;text-align:center;margin-top:4px;"></span>
+    </div>
+    <div class="screen-body" id="exerciseContainer"></div>
+</div>
 
                 <div class="screen" id="screen-settings">
                     <div class="screen-header"><h1>&#x2699;&#xFE0F; Ajustes</h1><span></span></div>
@@ -1034,26 +1116,58 @@ function confirmNightChange() {
     function $(sel) { return document.querySelector(sel); }
     function $$(sel) { return document.querySelectorAll(sel); }
 
-    function showScreen(screenId) {
-        const screens = $$('.screen');
-        screens.forEach(s => s.classList.remove('active'));
-        const target = document.getElementById('screen-' + screenId);
-        if (target) { target.classList.add('active'); target.scrollTop = 0; }
-        const navItems = $$('.nav-item');
-        navItems.forEach(n => n.classList.remove('active'));
-        const navTarget = document.querySelector('.nav-item[data-screen="' + screenId + '"]');
-        if (navTarget) navTarget.classList.add('active');
-        if (screenId === 'meals') renderMealsScreen();
-        if (screenId === 'exercise') renderExerciseScreen();
-        if (screenId === 'settings') renderSettingsScreen();
-        if (screenId === 'dashboard') {
-            document.getElementById('screen-onboarding').style.display = 'none';
-            renderDashboard();
-        }
-        if (screenId === 'history') renderHistoryScreen(); 
-        if (screenId === 'food-selector') renderFoodSelector();
-        if (screenId === 'exercise-selector') renderExerciseSelector();
+function showScreen(screenId) {
+    const screens = $$('.screen');
+    screens.forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('screen-' + screenId);
+    if (target) { target.classList.add('active'); target.scrollTop = 0; }
+    const navItems = $$('.nav-item');
+    navItems.forEach(n => n.classList.remove('active'));
+    const navTarget = document.querySelector('.nav-item[data-screen="' + screenId + '"]');
+    if (navTarget) navTarget.classList.add('active');
+    if (screenId === 'meals') { _historyDate = null; renderMealsScreen(); setupDayNavigation(); }
+    if (screenId === 'exercise') { _historyDate = null; renderExerciseScreen(); setupDayNavigationEx(); }
+    if (screenId === 'settings') renderSettingsScreen();
+    if (screenId === 'dashboard') {
+        document.getElementById('screen-onboarding').style.display = 'none';
+        renderDashboard();
     }
+    if (screenId === 'history') renderHistoryScreen(); 
+    if (screenId === 'food-selector') renderFoodSelector();
+    if (screenId === 'exercise-selector') renderExerciseSelector();
+}
+
+function changeDay(offset) {
+    var current = _historyDate ? new Date(_historyDate + 'T00:00:00') : new Date(getToday() + 'T00:00:00');
+    current.setDate(current.getDate() + offset);
+    _historyDate = current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0') + '-' + String(current.getDate()).padStart(2, '0');
+}
+
+function setupDayNavigation() {
+    var prevBtn = document.getElementById('btnPrevDay');
+    var nextBtn = document.getElementById('btnNextDay');
+    if (prevBtn && !prevBtn.hasAttribute('data-nav-initialized')) {
+        prevBtn.setAttribute('data-nav-initialized', 'true');
+        prevBtn.addEventListener('click', function() { changeDay(-1); renderMealsScreen(); });
+    }
+    if (nextBtn && !nextBtn.hasAttribute('data-nav-initialized')) {
+        nextBtn.setAttribute('data-nav-initialized', 'true');
+        nextBtn.addEventListener('click', function() { changeDay(1); renderMealsScreen(); });
+    }
+}
+
+function setupDayNavigationEx() {
+    var prevBtnEx = document.getElementById('btnPrevDayEx');
+    var nextBtnEx = document.getElementById('btnNextDayEx');
+    if (prevBtnEx && !prevBtnEx.hasAttribute('data-nav-initialized')) {
+        prevBtnEx.setAttribute('data-nav-initialized', 'true');
+        prevBtnEx.addEventListener('click', function() { changeDay(-1); renderExerciseScreen(); });
+    }
+    if (nextBtnEx && !nextBtnEx.hasAttribute('data-nav-initialized')) {
+        nextBtnEx.setAttribute('data-nav-initialized', 'true');
+        nextBtnEx.addEventListener('click', function() { changeDay(1); renderExerciseScreen(); });
+    }
+}
 
     function closeModal() {
     var overlay = document.getElementById('modalOverlay');
@@ -1134,7 +1248,25 @@ function openModal(html) {
     });
 
     // ============ DASHBOARD ============
-    function renderDashboard() {
+var pullStartY = 0;
+var pulling = false;
+document.addEventListener('touchstart', function(e) {
+    if (e.target.closest('#screen-dashboard') && window.scrollY === 0) {
+        pullStartY = e.touches[0].clientY;
+        pulling = true;
+    }
+}, {passive: true});
+document.addEventListener('touchmove', function(e) {
+    if (!pulling) return;
+    var pullDistance = e.touches[0].clientY - pullStartY;
+    if (pullDistance > 60) {
+        pulling = false;
+        renderDashboard();
+    }
+}, {passive: true});
+document.addEventListener('touchend', function() { pulling = false; });
+
+function renderDashboard() {
         const today = getToday();
         const ingested = calcDayIngested(today);
         const burned = calcDayBurned(today);
@@ -1149,7 +1281,65 @@ function openModal(html) {
         document.getElementById('balBurned').textContent = '-' + burned;
         document.getElementById('balNet').textContent = balance;
 
-        const circumference = 2 * Math.PI * 85;
+// Recordatorio de comidas
+var reminderCard = document.getElementById('reminderCard');
+var reminderText = document.getElementById('reminderText');
+var hourNow = new Date().getHours();
+var logTodayR = getLog(today);
+var hasAnyMeal = false;
+for (var mk in logTodayR.meals) {
+    if (logTodayR.meals[mk].length > 0) { hasAnyMeal = true; break; }
+}
+if (reminderCard && reminderText) {
+    if (!hasAnyMeal) {
+        if (hourNow >= 11 && hourNow < 15) {
+            reminderCard.style.display = 'block';
+            reminderText.textContent = '¿Ya has comido? Registra tu almuerzo.';
+        } else if (hourNow >= 15 && hourNow < 22) {
+            reminderCard.style.display = 'block';
+            reminderText.textContent = 'No olvides registrar tu cena esta noche.';
+        } else if (hourNow >= 22 || hourNow < 2) {
+            reminderCard.style.display = 'block';
+            reminderText.textContent = 'Recuerda registrar tus comidas de hoy.';
+        } else {
+            reminderCard.style.display = 'none';
+        }
+    } else {
+        reminderCard.style.display = 'none';
+    }
+}
+
+// Media semanal
+var weeklyBalances = [];
+var todayDateW = new Date(today + 'T00:00:00');
+for (var w = 0; w < 7; w++) {
+    var dw = new Date(todayDateW);
+    dw.setDate(dw.getDate() - w);
+    var ds = dw.getFullYear() + '-' + String(dw.getMonth() + 1).padStart(2, '0') + '-' + String(dw.getDate()).padStart(2, '0');
+    weeklyBalances.push(calcDayBalance(ds));
+}
+var weeklySum = weeklyBalances.reduce(function(a,b){return a+b;}, 0);
+var weeklyAvg = Math.round(weeklySum / 7);
+var weeklyCard = document.getElementById('weeklyCard');
+var weeklyBalanceEl = document.getElementById('weeklyBalance');
+var weeklyLabelEl = document.getElementById('weeklyLabel');
+if (weeklyCard) {
+    weeklyCard.style.display = 'block';
+    weeklyBalanceEl.textContent = (weeklyAvg >= 0 ? '+' : '') + weeklyAvg + ' kcal';
+    var diff = goal - weeklyAvg;
+    if (weeklyAvg <= goal && weeklyAvg >= goal * 0.9) {
+        weeklyLabelEl.innerHTML = '✅ Vas muy bien. Déficit medio diario: <strong style="color:var(--success);">' + Math.abs(diff) + ' kcal</strong>';
+        weeklyBalanceEl.style.color = 'var(--success)';
+    } else if (weeklyAvg < goal * 0.9) {
+        weeklyLabelEl.innerHTML = '⚠️ Déficit medio alto: <strong style="color:var(--danger);">' + Math.abs(diff) + ' kcal</strong>. Come más.';
+        weeklyBalanceEl.style.color = 'var(--danger)';
+    } else {
+        weeklyLabelEl.innerHTML = '📈 Superas el objetivo en <strong style="color:var(--warning);">' + Math.abs(diff) + ' kcal</strong> de media.';
+        weeklyBalanceEl.style.color = 'var(--warning)';
+    }
+}
+
+const circumference = 2 * Math.PI * 85;
         const ratio = Math.min(balance / goal, 1.2);
         const dash = ratio * circumference;
         document.getElementById('donutArc').setAttribute('stroke-dasharray', dash + ' ' + circumference);
@@ -1268,12 +1458,13 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
 
     // ============ MEALS SCREEN ============
     function renderMealsScreen() {
-        const container = document.getElementById('mealsContainer');
-        if (!container) return;
-        
-        const today = getToday();
-        const log = getLog(today);
-        document.getElementById('mealsHeaderDate').textContent = formatDateLong(today);
+    const container = document.getElementById('mealsContainer');
+    if (!container) return;
+    
+    const effectiveDate = _historyDate || getToday();
+    const today = getToday();
+    const log = getLog(effectiveDate);
+    document.getElementById('mealsHeaderDate').textContent = formatDateLong(effectiveDate);
 
         const needsFullRebuild = !container.querySelector('.meals-structure');
         
@@ -1351,8 +1542,8 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const idx = parseInt(this.dataset.index);
-                    const today = getToday();
-                    const logToday = getLog(today);
+const effectiveDate = _historyDate || getToday();
+const logToday = getLog(effectiveDate);
                     logToday.meals[mealKey].splice(idx, 1);
                     saveData();
                     updateMealsData(logToday);
@@ -1512,8 +1703,9 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
             const mealKey = window._addingToMeal || 'snacks';
             log.meals[mealKey].push(consumedItem);
             saveData();
-            closeModal();
-            showScreen('meals');
+closeModal();
+if (navigator.vibrate) navigator.vibrate(15);
+showScreen('meals');
             renderDashboard();
         });
         document.getElementById('btnCancelConsume').addEventListener('click', closeModal);
@@ -1528,7 +1720,7 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
             const unit = document.getElementById('newFoodUnit').value;
             const refAmount = parseFloat(document.getElementById('newFoodRefAmount').value) || 100;
             const refCalories = parseInt(document.getElementById('newFoodCalories').value) || 0;
-            if (!name || refCalories <= 0) { alert('Completa al menos el nombre y las calorías.'); return; }
+            if (!name || refCalories <= 0) { showToast('Completa al menos el nombre y las calorías.'); return; }
             const newFood = {
                 id: 'f_' + Date.now(),
                 name: name,
@@ -1555,12 +1747,13 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
 
     // ============ EXERCISE SCREEN ============
     function renderExerciseScreen() {
-        const container = document.getElementById('exerciseContainer');
-        if (!container) return;
-        
-        const today = getToday();
-        const log = getLog(today);
-        document.getElementById('exerciseHeaderDate').textContent = formatDateLong(today);
+    const container = document.getElementById('exerciseContainer');
+    if (!container) return;
+    
+    const effectiveDate = _historyDate || getToday();
+    const today = getToday();
+    const log = getLog(effectiveDate);
+    document.getElementById('exerciseHeaderDate').textContent = formatDateLong(effectiveDate);
 
         const needsFullRebuild = !container.querySelector('.exercise-structure');
         
@@ -1587,7 +1780,7 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
     }
     
     function updateExerciseData(log) {
-        const burned = calcDayBurned(getToday());
+        const burned = calcDayBurned(_historyDate || getToday());
         
         // Actualizar kcal quemadas
         const burnedEl = document.getElementById('exerciseBurned');
@@ -1613,8 +1806,8 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
             listContainer.querySelectorAll('.btn-remove').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     const idx = parseInt(this.dataset.exIndex);
-                    const today = getToday();
-                    const log = getLog(today);
+const effectiveDate = _historyDate || getToday();
+const log = getLog(effectiveDate);
                     log.exercises.splice(idx, 1);
                     saveData();
                     updateExerciseData(log);
@@ -1756,7 +1949,7 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
         document.getElementById('btnSaveNewEx').addEventListener('click', function() {
             const name = document.getElementById('newExName').value.trim();
             const kcalPerMin = parseFloat(document.getElementById('newExKcal').value) || 0;
-            if (!name || kcalPerMin <= 0) { alert('Completa todos los campos.'); return; }
+            if (!name || kcalPerMin <= 0) { showToast('Completa todos los campos.'); return; }
             appData.exercises.push({ id: 'e_' + Date.now(), name: name, kcalPerMin: kcalPerMin });
             saveData();
             closeModal();
@@ -1835,7 +2028,7 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
             openModal('<div class="modal-handle"></div><div class="modal-title">Registrar peso</div><div class="input-group"><label>Peso actual (kg)</label><input type="number" id="nuevoPeso" value="' + appData.weight + '" step="0.1" min="30" max="300" inputmode="decimal"></div><button class="btn btn-primary" id="guardarPeso">Guardar peso ✓</button><button class="btn btn-secondary" id="cancelPeso" style="margin-top:12px;">Cancelar</button>');
             document.getElementById('guardarPeso').addEventListener('click', () => {
                 var nuevo = parseFloat(document.getElementById('nuevoPeso').value);
-                if (!nuevo || nuevo < 30 || nuevo > 300) { alert('Peso no válido.'); return; }
+                if (!nuevo || nuevo < 30 || nuevo > 300) { showToast('Peso no válido.'); return; }
                 if (!appData.weightLog) appData.weightLog = [];
                 appData.weightLog.push({ date: getToday(), weight: nuevo });
                 appData.weight = nuevo;
@@ -1912,21 +2105,106 @@ function updateWeightStats() {
 
 function verEvolucionPeso() {
     if (!appData.weightLog || appData.weightLog.length === 0) {
-        alert('No hay datos de peso todavía.');
+        showToast('No hay datos de peso todavía.');
         return;
     }
-    var logs = appData.weightLog.slice(-30);
-    var minW = logs.reduce((a, b) => a.weight < b.weight ? a : b).weight;
-    var maxW = logs.reduce((a, b) => a.weight > b.weight ? a : b).weight;
-    var rango = maxW - minW || 1;
-    var html2 = '<div class="modal-handle"></div><div class="modal-title">Evolución de peso</div><div style="display:flex;align-items:flex-end;gap:6px;height:140px;padding:10px 0; border-bottom:1px solid var(--glass-border); margin-bottom:16px;">';
-    for (var wi = 0; wi < logs.length; wi++) {
-        var h = 30 + ((logs[wi].weight - minW) / rango) * 100;
-        html2 += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;"><div style="font-size:0.6rem;color:var(--text-primary); font-weight:700; margin-bottom:4px;">' + logs[wi].weight + '</div><div style="width:100%;max-width:24px;height:' + h + 'px;background:var(--accent);border-radius:6px 6px 2px 2px; box-shadow:0 0 10px var(--accent-glow);"></div><div style="font-size:0.55rem;color:var(--text-muted);margin-top:6px; font-weight:600;">' + logs[wi].date.substring(5).replace('-','/') + '</div></div>';
-    }
-    html2 += '</div><button class="btn btn-secondary" id="cerrarPeso">Cerrar</button>';
+    var logs = appData.weightLog.slice(-30).sort((a, b) => a.date.localeCompare(b.date));
+    var html2 = '<div class="modal-handle"></div><div class="modal-title">Evolución de peso</div>';
+    html2 += '<div style="height:220px; margin-bottom:16px;"><canvas id="pesoChartCanvas"></canvas></div>';
+    html2 += '<button class="btn btn-secondary" id="cerrarPeso">Cerrar</button>';
     openModal(html2);
+    
+    var ctx = document.getElementById('pesoChartCanvas').getContext('2d');
+    var labels = logs.map(function(l) { return l.date.slice(5).replace('-','/'); });
+    var data = logs.map(function(l) { return l.weight; });
+    var isDark = !document.body.classList.contains('light-mode');
+    var gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    var textColor = isDark ? '#a0a0b5' : '#606075';
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Peso (kg)',
+                data: data,
+                borderColor: '#7C3AED',
+                backgroundColor: 'rgba(124, 58, 237, 0.12)',
+                borderWidth: 3,
+                tension: 0.35,
+                fill: true,
+                pointBackgroundColor: '#7C3AED',
+                pointBorderColor: isDark ? '#101018' : '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'system-ui', weight: 600 } } },
+                y: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'system-ui', weight: 600 } } }
+            }
+        }
+    });
+    
     document.getElementById('cerrarPeso').addEventListener('click', closeModal);
+}
+
+function openEditFoodModal(food) {
+    let html = '<div class="modal-handle"></div><div class="modal-title">Editar alimento</div>';
+    html += '<div class="input-group"><label>Nombre</label><input type="text" id="editFoodName" value="' + food.name + '"></div>';
+    html += '<div class="input-group"><label>Unidad</label><select id="editFoodUnit">';
+    var units = ['g','ml','ud','taza','cucharada','cucharadita','porcion','loncha'];
+    var unitNames = ['Gramos (g)','Mililitros (ml)','Unidad (ud)','Taza (250ml)','Cucharada (15ml)','Cucharadita (5ml)','Porción','Loncha/Rodaja'];
+    for (var u = 0; u < units.length; u++) {
+        html += '<option value="' + units[u] + '"' + (food.unit === units[u] ? ' selected' : '') + '>' + unitNames[u] + '</option>';
+    }
+    html += '</select></div>';
+    html += '<div class="input-group"><label>Cantidad de referencia</label><input type="number" id="editFoodRefAmount" value="' + food.refAmount + '" min="1" inputmode="numeric"></div>';
+    html += '<div class="input-group"><label>Calorías (para esa cantidad)</label><input type="number" id="editFoodCalories" value="' + food.refCalories + '" min="0" inputmode="numeric"></div>';
+    html += '<div class="input-group"><label>Proteínas (g) - opcional</label><input type="number" id="editFoodProtein" value="' + (food.protein || 0) + '" min="0" step="0.1" inputmode="decimal"></div>';
+    html += '<div class="input-group"><label>Carbohidratos (g) - opcional</label><input type="number" id="editFoodCarbs" value="' + (food.carbs || 0) + '" min="0" step="0.1" inputmode="decimal"></div>';
+    html += '<div class="input-group"><label>Grasas (g) - opcional</label><input type="number" id="editFoodFat" value="' + (food.fat || 0) + '" min="0" step="0.1" inputmode="decimal"></div>';
+    html += '<button class="btn btn-primary" id="btnSaveEditFood">Guardar cambios ✓</button><button class="btn btn-secondary" id="btnCancelEditFood" style="margin-top:12px;">Cancelar</button>';
+    openModal(html);
+
+    document.getElementById('btnSaveEditFood').addEventListener('click', function() {
+        food.name = document.getElementById('editFoodName').value.trim();
+        food.unit = document.getElementById('editFoodUnit').value;
+        food.refAmount = parseFloat(document.getElementById('editFoodRefAmount').value) || 100;
+        food.refCalories = parseInt(document.getElementById('editFoodCalories').value) || 0;
+        food.protein = parseFloat(document.getElementById('editFoodProtein').value) || 0;
+        food.carbs = parseFloat(document.getElementById('editFoodCarbs').value) || 0;
+        food.fat = parseFloat(document.getElementById('editFoodFat').value) || 0;
+        if (!food.name || food.refCalories <= 0) { showToast('Completa al menos el nombre y las calorías.'); return; }
+        saveData();
+        closeModal();
+        renderSettingsScreen();
+        if (document.getElementById('screen-food-selector').classList.contains('active')) renderFoodSelector();
+    });
+    document.getElementById('btnCancelEditFood').addEventListener('click', closeModal);
+}
+
+function openEditExerciseModal(exercise) {
+    let html = '<div class="modal-handle"></div><div class="modal-title">Editar ejercicio</div>';
+    html += '<div class="input-group"><label>Nombre</label><input type="text" id="editExName" value="' + exercise.name + '"></div>';
+    html += '<div class="input-group"><label>Calorías por minuto</label><input type="number" id="editExKcal" value="' + exercise.kcalPerMin + '" min="0.1" step="0.1" inputmode="decimal"></div>';
+    html += '<button class="btn btn-primary" id="btnSaveEditEx">Guardar cambios ✓</button><button class="btn btn-secondary" id="btnCancelEditEx" style="margin-top:12px;">Cancelar</button>';
+    openModal(html);
+
+    document.getElementById('btnSaveEditEx').addEventListener('click', function() {
+        exercise.name = document.getElementById('editExName').value.trim();
+        exercise.kcalPerMin = parseFloat(document.getElementById('editExKcal').value) || 0;
+        if (!exercise.name || exercise.kcalPerMin <= 0) { showToast('Completa todos los campos.'); return; }
+        saveData();
+        closeModal();
+        renderSettingsScreen();
+        if (document.getElementById('screen-exercise-selector').classList.contains('active')) renderExerciseSelector();
+    });
+    document.getElementById('btnCancelEditEx').addEventListener('click', closeModal);
 }
 
 function exportarDatos() {
@@ -1969,25 +2247,25 @@ function importarDatos(e) {
     reader.onload = function(ev) {
         try {
             var backup = JSON.parse(ev.target.result);
-            if (!backup.version) { alert('Archivo no válido.'); return; }
-            if (confirm('⚠️ Esto SOBREESCRIBIRÁ todos tus datos actuales. ¿Estás seguro?')) {
-                appData.onboarded = backup.onboarded !== undefined ? backup.onboarded : true;
-                appData.age = backup.age || 30;
-                appData.weight = backup.weight || 75;
-                appData.height = backup.height || 175;
-                appData.sex = backup.sex || 'M';
-                appData.activityLevel = backup.activityLevel || 1.55;
-                appData.goalCalories = backup.goalCalories || 2000;
-                appData.foods = backup.foods || [];
-                appData.exercises = backup.exercises || [];
-                appData.dailyLogs = backup.dailyLogs || {};
-                appData.weightLog = backup.weightLog || [];
-                saveData();
-                alert('✅ Datos importados correctamente. La app se actualizará.');
-                location.reload();
-            }
+            if (!backup.version) { showToast('Archivo no válido.'); return; }
+            showConfirmModal('⚠️ Esto SOBREESCRIBIRÁ todos tus datos actuales. ¿Estás seguro?', function() {
+    appData.onboarded = backup.onboarded !== undefined ? backup.onboarded : true;
+    appData.age = backup.age || 30;
+    appData.weight = backup.weight || 75;
+    appData.height = backup.height || 175;
+    appData.sex = backup.sex || 'M';
+    appData.activityLevel = backup.activityLevel || 1.55;
+    appData.goalCalories = backup.goalCalories || 2000;
+    appData.foods = backup.foods || [];
+    appData.exercises = backup.exercises || [];
+    appData.dailyLogs = backup.dailyLogs || {};
+    appData.weightLog = backup.weightLog || [];
+    saveData();
+    showToast('✅ Datos importados correctamente. La app se actualizará.');
+    location.reload();
+});
         } catch (err) {
-            alert('❌ Error al leer el archivo. Asegúrate de que sea un JSON válido.');
+            showToast('❌ Error al leer el archivo. Asegúrate de que sea un JSON válido.');
         }
     };
     reader.readAsText(file);
@@ -2006,20 +2284,31 @@ function importarDatos(e) {
         function openManageFoodsModal() {
         let html = '<div class="modal-handle"></div><div class="modal-title">Mis alimentos (' + appData.foods.length + ')</div>';
         if (appData.foods.length === 0) html += '<div class="empty-state"><p>No hay alimentos creados.</p></div>';
-        appData.foods.forEach(function(f) { html += '<div class="food-item" style="justify-content:space-between; margin-bottom:8px;"><span><strong style="font-size:1rem; display:block; margin-bottom:4px;">' + f.name + '</strong> <small style="color:var(--text-muted); font-weight:600;">' + f.refCalories + 'kcal / ' + f.refAmount + f.unit + '</small></span><button class="btn-remove" data-delete-food="' + f.id + '">✕</button></div>'; });
+        appData.foods.forEach(function(f) { html += '<div class="food-item" style="justify-content:space-between; margin-bottom:8px;"><span><strong style="font-size:1rem; display:block; margin-bottom:4px;">' + f.name + '</strong> <small style="color:var(--text-muted); font-weight:600;">' + f.refCalories + 'kcal / ' + f.refAmount + f.unit + '</small></span><div style="display:flex; gap:8px;"><button class="btn-remove" data-edit-food="' + f.id + '" style="background:rgba(124,58,237,0.15); color:var(--accent);">✎</button><button class="btn-remove" data-delete-food="' + f.id + '">✕</button></div></div>'; });
         html += '<button class="btn btn-secondary" id="closeManageFoods" style="margin-top:16px;">Cerrar</button>';
         openModal(html);
         document.getElementById('closeManageFoods').addEventListener('click', closeModal);
+        document.querySelectorAll('#modalSheet button[data-edit-food]').forEach(function(b) {
+            b.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var foodId = this.dataset.editFood;
+                var food = appData.foods.find(function(f) { return f.id === foodId; });
+                if (food) {
+                    closeModal();
+                    openEditFoodModal(food);
+                }
+            });
+        });
         document.querySelectorAll('#modalSheet button[data-delete-food]').forEach(function(b) {
     b.addEventListener('click', function(e) {
         e.stopPropagation();
         var foodId = this.dataset.deleteFood;
-        if (confirm('¿Eliminar este alimento permanentemente?')) {
-            appData.foods = appData.foods.filter(function(f) { return f.id !== foodId; });
-            saveData();
-            closeModal();
-            renderSettingsScreen();
-        }
+        showConfirmModal('¿Eliminar este alimento permanentemente?', function() {
+    appData.foods = appData.foods.filter(function(f) { return f.id !== foodId; });
+    saveData();
+    closeModal();
+    renderSettingsScreen();
+});
     });
 });
     }
@@ -2027,20 +2316,31 @@ function importarDatos(e) {
         function openManageExercisesModal() {
         let html = '<div class="modal-handle"></div><div class="modal-title">Mis ejercicios (' + appData.exercises.length + ')</div>';
         if (appData.exercises.length === 0) html += '<div class="empty-state"><p>No hay ejercicios creados.</p></div>';
-        appData.exercises.forEach(function(e) { html += '<div class="food-item" style="justify-content:space-between; margin-bottom:8px;"><span><strong style="font-size:1rem; display:block; margin-bottom:4px;">' + e.name + '</strong> <small style="color:var(--text-muted); font-weight:600;">' + e.kcalPerMin + ' kcal/min</small></span><button class="btn-remove" data-delete-ex="' + e.id + '">✕</button></div>'; });
+        appData.exercises.forEach(function(e) { html += '<div class="food-item" style="justify-content:space-between; margin-bottom:8px;"><span><strong style="font-size:1rem; display:block; margin-bottom:4px;">' + e.name + '</strong> <small style="color:var(--text-muted); font-weight:600;">' + e.kcalPerMin + ' kcal/min</small></span><div style="display:flex; gap:8px;"><button class="btn-remove" data-edit-ex="' + e.id + '" style="background:rgba(124,58,237,0.15); color:var(--accent);">✎</button><button class="btn-remove" data-delete-ex="' + e.id + '">✕</button></div></div>'; });
         html += '<button class="btn btn-secondary" id="closeManageEx" style="margin-top:16px;">Cerrar</button>';
         openModal(html);
         document.getElementById('closeManageEx').addEventListener('click', closeModal);
+        document.querySelectorAll('#modalSheet button[data-edit-ex]').forEach(function(b) {
+            b.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var exId = this.dataset.editEx;
+                var exercise = appData.exercises.find(function(e) { return e.id === exId; });
+                if (exercise) {
+                    closeModal();
+                    openEditExerciseModal(exercise);
+                }
+            });
+        });
         document.querySelectorAll('#modalSheet button[data-delete-ex]').forEach(function(b) {
     b.addEventListener('click', function(e) {
         e.stopPropagation();
         var exId = this.dataset.deleteEx;
-        if (confirm('¿Eliminar este ejercicio permanentemente?')) {
-            appData.exercises = appData.exercises.filter(function(e) { return e.id !== exId; });
-            saveData();
-            closeModal();
-            renderSettingsScreen();
-        }
+        showConfirmModal('¿Eliminar este ejercicio permanentemente?', function() {
+    appData.exercises = appData.exercises.filter(function(e) { return e.id !== exId; });
+    saveData();
+    closeModal();
+    renderSettingsScreen();
+});
     });
 });
     }
@@ -2049,13 +2349,16 @@ function importarDatos(e) {
 let historyChart = null;
 let historyMode = 'dia';
 let historyChartCanvas = null;
+let _historyDate = null;
 
 function formatDateShort(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
+    const diasSem = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const diaSem = diasSem[d.getDay()];
     const dia = String(d.getDate()).padStart(2, '0');
     const mes = String(d.getMonth() + 1).padStart(2, '0');
     const anio = String(d.getFullYear()).slice(-2);
-    return dia + '/' + mes + '/' + anio;
+    return diaSem + ' ' + dia + '/' + mes + '/' + anio;
 }
 
 function groupFoodsByItem(items) {
@@ -2148,13 +2451,13 @@ function renderHistoryScreen() {
             renderHistoryList(); 
         });
         document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-            if (confirm('⚠️ ¿Borrar todos los registros de comidas y ejercicios? Esta acción no se puede deshacer.')) {
-                appData.dailyLogs = {};
-                saveData();
-                renderHistoryScreen();
-                renderDashboard();
-                showToast('Historial borrado');
-            }
+            showConfirmModal('⚠️ ¿Borrar todos los registros de comidas y ejercicios? Esta acción no se puede deshacer.', function() {
+    appData.dailyLogs = {};
+    saveData();
+    renderHistoryScreen();
+    renderDashboard();
+    showToast('Historial borrado');
+});
         });
     }
 
@@ -2184,21 +2487,44 @@ function updateStatsAndChart() {
     
     let labels = [], values = [];
     if (historyMode === 'dia') {
-        let last7 = allDates.slice(-7);
-        labels = last7.map(d => d.slice(5).replace('-','/'));
-        values = last7.map(d => calcDayBalance(d));
-    } else {
-        let monthMap = new Map();
-        for (let date of allDates) {
-            let y = date.slice(0,4);
-            let m = date.slice(5,7);
-            let key = y + '-' + m;
-            let balance = calcDayBalance(date);
-            monthMap.set(key, (monthMap.get(key)||0) + balance);
+    let last14 = allDates.slice(-14);
+    let activeDays = [];
+    for (let d of last14) {
+        let log = appData.dailyLogs[d];
+        let hasFood = false;
+        for (let meal of Object.values(log.meals)) {
+            if (meal.length > 0) { hasFood = true; break; }
         }
-        let sortedMonths = Array.from(monthMap.keys()).sort().slice(-6);
-        labels = sortedMonths.map(k => k.slice(5)+'/'+k.slice(2,4));
-        values = sortedMonths.map(k => monthMap.get(k));
+        let hasExercise = log.exercises.length > 0;
+        if (hasFood || hasExercise) {
+            activeDays.push(d);
+        }
+    }
+    let last7 = activeDays.slice(-7);
+    labels = last7.map(d => {
+        let parts = d.split('-');
+        return parts[2] + '/' + parts[1];
+    });
+    values = last7.map(d => calcDayBalance(d));
+} else {
+        let monthMap = new Map();
+for (let date of allDates) {
+    let log = appData.dailyLogs[date];
+    let hasFood = false;
+    for (let meal of Object.values(log.meals)) {
+        if (meal.length > 0) { hasFood = true; break; }
+    }
+    let hasExercise = log.exercises.length > 0;
+    if (!hasFood && !hasExercise) continue;
+    let y = date.slice(0,4);
+    let m = date.slice(5,7);
+    let key = y + '-' + m;
+    let balance = calcDayBalance(date);
+    monthMap.set(key, (monthMap.get(key)||0) + balance);
+}
+let sortedMonths = Array.from(monthMap.keys()).sort().slice(-6);
+labels = sortedMonths.map(k => k.slice(5)+'/'+k.slice(2,4));
+values = sortedMonths.map(k => monthMap.get(k));
     }
     
     const isDark = !document.body.classList.contains('light-mode');
@@ -2322,7 +2648,7 @@ function renderHistoryList() {
             let kcalColor = isOverGoal ? 'var(--danger)' : 'var(--success)';
             let kcalBg = isOverGoal ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
             
-            html += '<div class="log-group"><div class="log-header"><div><b style="font-size:1.15rem; letter-spacing:-0.5px;">' + group.label + '</b><div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; font-weight:600;">🍽️ ' + productCount + ' ' + (productCount === 1 ? 'producto' : 'productos') + '</div></div><div class="align-right-fix"><span style="background:' + kcalBg + '; color:' + kcalColor + '; padding:6px 16px; border-radius:40px; font-size:0.9rem; font-weight:800; border:1px solid ' + kcalColor + '40;">' + Math.round(totalIngested) + ' kcal</span><div class="log-arrow">▼</div></div></div><div class="log-details">';
+            html += '<div class="log-group" data-history-date="' + group.items[0].date + '"><div class="log-header"><div><b style="font-size:1.15rem; letter-spacing:-0.5px;">' + group.label + '</b><div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; font-weight:600;">🍽️ ' + productCount + ' ' + (productCount === 1 ? 'producto' : 'productos') + '</div></div><div class="align-right-fix"><span style="background:' + kcalBg + '; color:' + kcalColor + '; padding:6px 16px; border-radius:40px; font-size:0.9rem; font-weight:800; border:1px solid ' + kcalColor + '40;">' + Math.round(totalIngested) + ' kcal</span><div class="log-arrow">▼</div></div></div><div class="log-details">';
             
             for (let item of group.items) {
                 html += '<div style="margin-bottom: 16px; padding-bottom: 4px;">';
@@ -2361,7 +2687,20 @@ function renderHistoryList() {
     }
     container.innerHTML = html;
     
-    document.querySelectorAll('.log-group').forEach(group => {
+    document.querySelectorAll('.log-group').forEach(function(group) {
+    var header = group.querySelector('.log-header');
+    var dateAttr = group.dataset.historyDate;
+    if (dateAttr && header && !header.hasAttribute('data-nav-initialized')) {
+        header.setAttribute('data-nav-initialized', 'true');
+        header.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            _historyDate = dateAttr;
+            showScreen('meals');
+        });
+    }
+});
+
+document.querySelectorAll('.log-group').forEach(group => {
         const header = group.querySelector('.log-header');
         const details = group.querySelector('.log-details');
         const arrow = group.querySelector('.log-arrow');
@@ -2417,7 +2756,18 @@ group.classList.toggle('open');
         container.appendChild(toast);
         setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 2500);
     }
-    window.alert = showToast;
+    
+
+function showConfirmModal(message, onConfirm) {
+    let html = '<div class="modal-handle"></div><div class="modal-title">Confirmar</div><p style="text-align:center;margin-bottom:24px; font-weight:500; color:var(--text-secondary);">' + message + '</p>';
+    html += '<button class="btn btn-primary" id="confirmYes">Sí, confirmar</button><button class="btn btn-secondary" id="confirmNo" style="margin-top:12px;">Cancelar</button>';
+    openModal(html);
+    document.getElementById('confirmYes').addEventListener('click', function() {
+        closeModal();
+        if (onConfirm) onConfirm();
+    });
+    document.getElementById('confirmNo').addEventListener('click', closeModal);
+}
 
     // Ripple effect
     document.addEventListener('pointerdown', function(e) {
@@ -2458,7 +2808,25 @@ group.classList.toggle('open');
 }, 60000);
 
     setTimeout(function() { initTheme(); }, 200);
-    console.log('🔥 Caloria app initialized successfully!');
+
+// Generar partículas de fondo
+(function initParticles() {
+    var container = document.getElementById('particlesContainer');
+    if (!container) return;
+    for (var i = 0; i < 20; i++) {
+        var p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 8 + 's';
+        p.style.animationDuration = (6 + Math.random() * 10) + 's';
+        p.style.width = (2 + Math.random() * 4) + 'px';
+        p.style.height = p.style.width;
+        container.appendChild(p);
+    }
+})();
+
+console.log('🔥 Caloria app initialized successfully!');
 })();
 </script>
 </body>
