@@ -93,7 +93,7 @@
         position: relative;
         font-weight: 400;
         letter-spacing: -0.015em;
-        transition: background-color var(--transition-slow), color var(--transition-slow);
+        transition: color var(--transition-slow);
     }
     .app-wrapper {
         width: 100%;
@@ -115,6 +115,7 @@
     pointer-events: none;
     z-index: 0;
     animation: orbFloat 25s ease-in-out infinite alternate;
+    transition: background 0.6s ease;
 }
     .bg-orb.orb-1 { width: 350px; height: 350px; background: var(--accent); top: -100px; right: -100px; animation-duration: 30s; }
     .bg-orb.orb-2 { width: 300px; height: 300px; background: var(--accent-2); bottom: 5%; left: -100px; animation-delay: -10s; }
@@ -1020,13 +1021,11 @@ function applyTheme(mode) {
         if (btn) btn.textContent = '🌙';
     }
 
-    // Forzar re-render del dashboard para actualizar el donut
-if (document.getElementById('screen-dashboard').classList.contains('active')) {
-    renderDashboard();
-}
-
     localStorage.setItem('caloria_theme', mode);
-    if(historyChart && !document.getElementById('modalOverlay').classList.contains('active')) updateStatsAndChart();
+// Solo actualizar gráfica si el historial está visible (ya usa variables CSS)
+if (historyChart && document.getElementById('screen-history').classList.contains('active')) {
+    updateStatsAndChart();
+}
 }
     
     function initTheme() {
@@ -1116,7 +1115,13 @@ function confirmNightChange() {
     function $(sel) { return document.querySelector(sel); }
     function $$(sel) { return document.querySelectorAll(sel); }
 
+var _currentScreen = 'onboarding';
+
 function showScreen(screenId) {
+    if (screenId === _currentScreen && screenId !== 'food-selector' && screenId !== 'exercise-selector') {
+        return;
+    }
+    _currentScreen = screenId;
     const screens = $$('.screen');
     screens.forEach(s => s.classList.remove('active'));
     const target = document.getElementById('screen-' + screenId);
@@ -1466,7 +1471,7 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
     const log = getLog(effectiveDate);
     document.getElementById('mealsHeaderDate').textContent = formatDateLong(effectiveDate);
 
-        const needsFullRebuild = !container.querySelector('.meals-structure');
+        const needsFullRebuild = !container.querySelector('.meals-structure') || _historyDate !== _lastRenderedMealsDate;
         
         if (needsFullRebuild) {
             const mealNames = [
@@ -1500,9 +1505,10 @@ if (hour >= 0 && hour < 5 && appData.nightConfirmed !== realToday) {
             });
         }
         
-        // Actualizar SOLO los datos (sin tocar la estructura)
-        updateMealsData(log);
-    }
+            // Actualizar SOLO los datos (sin tocar la estructura)
+    updateMealsData(log);
+    _lastRenderedMealsDate = effectiveDate;
+}
     
     function updateMealsData(log) {
     const mealKeys = ['breakfast', 'lunch', 'dinner', 'snacks'];
@@ -1755,7 +1761,7 @@ showScreen('meals');
     const log = getLog(effectiveDate);
     document.getElementById('exerciseHeaderDate').textContent = formatDateLong(effectiveDate);
 
-        const needsFullRebuild = !container.querySelector('.exercise-structure');
+        const needsFullRebuild = !container.querySelector('.exercise-structure') || _historyDate !== _lastRenderedExerciseDate;
         
         if (needsFullRebuild) {
             container.innerHTML = `
@@ -1775,9 +1781,10 @@ showScreen('meals');
             });
         }
         
-        // Actualizar SOLO los datos
-        updateExerciseData(log);
-    }
+            // Actualizar SOLO los datos
+    updateExerciseData(log);
+    _lastRenderedExerciseDate = effectiveDate;
+}
     
     function updateExerciseData(log) {
         const burned = calcDayBurned(_historyDate || getToday());
@@ -2289,16 +2296,15 @@ function importarDatos(e) {
         openModal(html);
         document.getElementById('closeManageFoods').addEventListener('click', closeModal);
         document.querySelectorAll('#modalSheet button[data-edit-food]').forEach(function(b) {
-            b.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var foodId = this.dataset.editFood;
-                var food = appData.foods.find(function(f) { return f.id === foodId; });
-                if (food) {
-                    closeModal();
-                    openEditFoodModal(food);
-                }
-            });
-        });
+    b.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var foodId = this.dataset.editFood;
+        var food = appData.foods.find(function(f) { return f.id === foodId; });
+        if (food) {
+            openEditFoodModal(food);
+        }
+    });
+});
         document.querySelectorAll('#modalSheet button[data-delete-food]').forEach(function(b) {
     b.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -2321,16 +2327,15 @@ function importarDatos(e) {
         openModal(html);
         document.getElementById('closeManageEx').addEventListener('click', closeModal);
         document.querySelectorAll('#modalSheet button[data-edit-ex]').forEach(function(b) {
-            b.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var exId = this.dataset.editEx;
-                var exercise = appData.exercises.find(function(e) { return e.id === exId; });
-                if (exercise) {
-                    closeModal();
-                    openEditExerciseModal(exercise);
-                }
-            });
-        });
+    b.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var exId = this.dataset.editEx;
+        var exercise = appData.exercises.find(function(e) { return e.id === exId; });
+        if (exercise) {
+            openEditExerciseModal(exercise);
+        }
+    });
+});
         document.querySelectorAll('#modalSheet button[data-delete-ex]').forEach(function(b) {
     b.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -2350,6 +2355,8 @@ let historyChart = null;
 let historyMode = 'dia';
 let historyChartCanvas = null;
 let _historyDate = null;
+let _lastRenderedMealsDate = null;
+let _lastRenderedExerciseDate = null;
 
 function formatDateShort(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
